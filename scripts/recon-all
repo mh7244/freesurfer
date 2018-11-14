@@ -2231,11 +2231,11 @@ if($DoNormalization) then
   cd $subjdir/mri > /dev/null
   $PWD |& tee -a $LF
 
-  set ctrlvol_base = ($longbasedir/mri/ctrl_vol.mgz)
-  set biasvol_base = ($longbasedir/mri/bias_vol.mgz)
   set ctrlvol_init = (ctrl_vol_from_base.mgz)
   set biasvol_init = (bias_vol_from_base.mgz)
   if($longitudinal && $UseLongbaseCtrlVol) then
+    set ctrlvol_base = ($longbasedir/mri/ctrl_vol.mgz)
+    set biasvol_base = ($longbasedir/mri/bias_vol.mgz)
     if(! -e $ctrlvol_base || ! -e $biasvol_base) then
       echo "Repeat intensity norm to create base ctrl-point vols." |& tee -a $LF
       set cmd = (mri_normalize)
