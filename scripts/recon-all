@@ -1251,7 +1251,7 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
   if($RunIt) rm -f ${subjdir}/${BaseSubjsListFname}
   set tdir = (${subjdir}/mri/transforms)
   set normInVols=()
-  set headInVols=()
+  set nuInVols=()
   set rawInVols=()
   set subjInVols=()
   set ltaXforms=()
@@ -1262,7 +1262,7 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
   foreach s ($BaseSubjsList)
     if($RunIt) echo "${s}" >> ${subjdir}/${BaseSubjsListFname}
     set normInVols = ($normInVols ${SUBJECTS_DIR}/${s}/mri/norm.mgz)
-    set headInVols = ($headInVols ${SUBJECTS_DIR}/${s}/mri/nu.mgz)
+    set nuInVols = ($nuInVols ${SUBJECTS_DIR}/${s}/mri/nu.mgz)
     set rawInVols = ($rawInVols ${SUBJECTS_DIR}/${s}/mri/rawavg.mgz)
     set subjInVols = ($subjInVols ${SUBJECTS_DIR}/${s}/mri/${BaseSubjInvol})
     set ltaXforms = ($ltaXforms ${tdir}/${s}_to_${subjid}.lta)
@@ -1325,20 +1325,32 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
     set cmd = ($cmd --lta ${ltaRforms})
     set cmd = ($cmd --average ${robust_template_avg_arg})
     set cmd = ($cmd --sat 4.685)
-    set cmd = ($cmd --template ${subjdir}/mri/rigid_template.mgz)
+    set cmd = ($cmd --template ${subjdir}/mri/norm_template.mgz)
     echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
     if($RunIt) $fs_time $cmd |& tee -a $LF
     if($status) goto error_exit;
 
     # initialize affine registration of full head with rigid LTAs
     if ($DoAffineBase) then
-      set cmd = (mri_robust_template --mov ${headInVols})
+      set cmd = (mri_robust_template --mov ${nuInVols})
       set cmd = ($cmd --lta ${ltaAforms})
       set cmd = ($cmd --average ${robust_template_avg_arg})
       set cmd = ($cmd --sat 4.685)
       set cmd = ($cmd --ixforms ${ltaRforms})
       set cmd = ($cmd --affine)
-      set cmd = ($cmd --template ${subjdir}/mri/affine_template.nii.gz)
+      set cmd = ($cmd --template ${subjdir}/mri/nu_template.nii.gz)
+      echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
+      if($RunIt) $fs_time $cmd |& tee -a $LF
+      if($status) goto error_exit;
+
+      # use affine reg to init rigid reg on norm.mgz (fine tuning)
+      # not sure if it is really necessary
+      set cmd = (mri_robust_template --mov ${normInVols})
+      set cmd = ($cmd --lta ${ltaAforms})
+      set cmd = ($cmd --average ${robust_template_avg_arg})
+      set cmd = ($cmd --sat 4.685)
+      set cmd = ($cmd --ixforms ${ltaAforms})
+      set cmd = ($cmd --template ${subjdir}/mri/norm_template.mgz)
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
@@ -1433,7 +1445,7 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
     set cmd = (antsMultivariateTemplateConstruction2.sh)
     set cmd = ($cmd -d 3 -r 0 -n 1 -t SyN -i 2 -q 50x50x40x10)
     set cmd = ($cmd -o ${adir}/)
-    set cmd = ($cmd -z ${subjdir}/mri/affine_template.nii.gz)
+    set cmd = ($cmd -z ${subjdir}/mri/nu_template.nii.gz)
     if ($OMP_NUM_THREADS > 1) set cmd = ($cmd -c 2 -j $OMP_NUM_THREADS)
     set cmd = ($cmd $antsIn)
     echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
@@ -1457,7 +1469,7 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
       set cmd = (mri_concatenate_gcam --downsample)
-      set cmd = ($cmd --change-source $headInVols[$i])
+      set cmd = ($cmd --change-source $nuInVols[$i])
       set cmd = ($cmd $rawToBase[$i] $crossToBase[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
@@ -1486,7 +1498,7 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
       set cmd = (mri_concatenate_gcam --downsample)
-      set cmd = ($cmd --change-target $headInVols[$i])
+      set cmd = ($cmd --change-target $nuInVols[$i])
       set cmd = ($cmd $baseToRaw[$i] $baseToCross[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
@@ -1530,6 +1542,21 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
     if($RunIt) $fs_time $cmd |& tee -a $LF
     if($status) goto error_exit;
 
+    foreach i (`seq 1 $#BaseSubjsList`)
+      set cmd = (mri_convert -odt float -at $crossToBase[$i])
+      set cmd = ($cmd $normInVols[$i] $antsOut[$i])
+      echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
+      if($RunIt) $fs_time $cmd |& tee -a $LF
+      if($status) goto error_exit;
+    end
+    set cmd = (AverageImages 3 $antsTmp 1 $antsOut)
+    echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
+    if($RunIt) $fs_time $cmd |& tee -a $LF
+    if($status) goto error_exit;
+    set cmd = (mri_convert -odt uchar $antsTmp ${subjdir}/mri/norm_template.mgz)
+    echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
+    if($RunIt) $fs_time $cmd |& tee -a $LF
+    if($status) goto error_exit;
   endif # Not non-linear.
 
   touch $touchdir/base.touch
@@ -2679,34 +2706,26 @@ if($DoGCAReg) then
   $PWD |& tee -a $LF
   set xopts = `fsr-getxopts mri_em_register $XOptsFile $GlobXOptsFile`
   set lta = (transforms/talairach.lta)
-  if($#GCAOutputName) then
-    set lta = (transforms/talairach.$GCAOutputName.lta)
-  endif
+  if($#GCAOutputName) set lta = (transforms/talairach.$GCAOutputName.lta)
   if($longitudinal) then
       set cmd = (cp -vf $longbasedir/mri/$lta $lta)
-  else
-    if($NoEMReg == 0) then
-      if($UseCuda) then
-        set cmd = (mri_em_register_cuda)
-      else
-        set cmd = (mri_em_register)
-      endif
-      if ($LHonly) set cmd = ($cmd -lh -spacing 4 -s 7)
-      if ($RHonly) set cmd = ($cmd -rh -spacing 4 -s 7)
-      set cmd = ($cmd $nocerebellum)
-      set cmd = ($cmd -rusage $touchdir/rusage.mri_em_register.dat)
-      if($DoCreateBaseSubj) then
-        set cmd = ($cmd -mask brainmask.mgz)
-      else # Default processing:
-        set cmd = ($cmd -mask $EMRegMask -uns 3)
-      endif
-      set cmd = ($cmd nu.mgz ${GCADIR}/$GCA $lta)
-    else
+  else if($NoEMReg) then # Cross or base.
       set mni305 = $FREESURFER_HOME/average/mni305.cor.mgz
       set xfm = transforms/talairach.xfm
       set cmd = (lta_convert --src orig.mgz --trg $mni305 \
         --inxfm $xfm --outlta $lta --subject fsaverage --ltavox2vox)
-    endif
+  else # Cross or base:
+    set invol = (nu.mgz)
+    if($DoCreateBaseSubj) set invol = norm_template.mgz
+
+    set cmd = (mri_em_register)
+    if($UseCuda) set cmd = (mri_em_register_cuda)
+    if ($LHonly) set cmd = ($cmd -lh)
+    if ($RHonly) set cmd = ($cmd -rh)
+    if (! $DoCreateBaseSubj) set cmd = ($cmd -uns 3 -mask $EMRegMask) # Cross.
+    set cmd = ($cmd $nocerebellum -spacing 4 -s 7)
+    set cmd = ($cmd -rusage $touchdir/rusage.mri_em_register.dat)
+    set cmd = ($cmd $invol ${GCADIR}/$GCA $lta)
   endif
   echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
   if($RunIt) $fs_time $cmd |& tee -a $LF
@@ -2743,6 +2762,8 @@ if($DoCANormalize) then
   endif
 
   set xopts = `fsr-getxopts mri_ca_normalize $XOptsFile $GlobXOptsFile`
+  set invol = nu.mgz
+  if ($DoCreateBaseSubj) set invol = norm_template.mgz
   set cmd = (mri_ca_normalize $nocerebellum)
   if ($UseCPsWithCaNorm) set cmd = ($cmd -f $ControlPointsFile)
   if ($LHonly) set cmd = ($cmd -lh)
@@ -2752,8 +2773,8 @@ if($DoCANormalize) then
   else
     set cmd = ($cmd -c $ctrl_pts)
   endif
-  set cmd = ($cmd -mask brainmask.mgz $xopts nu.mgz)
-  set cmd = ($cmd ${GCADIR}/$GCA $lta $norm)
+  set cmd = ($cmd -mask brainmask.mgz $xopts)
+  set cmd = ($cmd $invol ${GCADIR}/$GCA $lta $norm)
 
   echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
   if($RunIt) $fs_time $cmd |& tee -a $LF
