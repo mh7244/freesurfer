@@ -2722,8 +2722,9 @@ if($DoGCAReg) then
     if($UseCuda) set cmd = (mri_em_register_cuda)
     if ($LHonly) set cmd = ($cmd -lh)
     if ($RHonly) set cmd = ($cmd -rh)
+    if ($LHonly || $RHonly) set cmd = ($cmd -spacing 4 -s 7)
     if (! $DoCreateBaseSubj) set cmd = ($cmd -uns 3 -mask $EMRegMask) # Cross.
-    set cmd = ($cmd $nocerebellum -spacing 4 -s 7)
+    set cmd = ($cmd $nocerebellum)
     set cmd = ($cmd -rusage $touchdir/rusage.mri_em_register.dat)
     set cmd = ($cmd $invol ${GCADIR}/$GCA $lta)
   endif
