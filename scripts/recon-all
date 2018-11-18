@@ -2806,7 +2806,7 @@ if($DoCAReg) then
 
   if($longitudinal && $DoNonlinBase) then
     set cmd = (mri_concatenate_gcam)
-    set cmd = ($cmd $BaseToLongRegFile $longbasedir/mri/$m3z $m3z)
+    set cmd = ($cmd $LongToBaseRegFile $longbasedir/mri/$m3z $m3z)
     echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
     if($RunIt) $fs_time $cmd |& tee -a $LF
     if($status) goto error_exit;
