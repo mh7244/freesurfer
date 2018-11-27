@@ -2804,45 +2804,45 @@ if($DoCAReg) then
     set norm = norm.$GCAOutputName.mgz
   endif
 
-  if($longitudinal && $DoNonlinBase) then
-    set cmd = (mri_concatenate_gcam)
-    set cmd = ($cmd $LongToBaseRegFile $longbasedir/mri/$m3z $m3z)
-    echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
-    if($RunIt) $fs_time $cmd |& tee -a $LF
-    if($status) goto error_exit;
+  #if($longitudinal && $DoNonlinBase) then
+  #  set cmd = (mri_concatenate_gcam)
+  #  set cmd = ($cmd $LongToBaseRegFile $longbasedir/mri/$m3z $m3z)
+  #  echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
+  #  if($RunIt) $fs_time $cmd |& tee -a $LF
+  #  if($status) goto error_exit;
+  #endif
+
+  set cmd = (mri_ca_register)
+  if($UseCuda) set cmd = (mri_ca_register_cuda)
+  set cmd = ($cmd $nocerebellum)
+  if($LHonly) set cmd = ($cmd -lh)
+  if($RHonly) set cmd = ($cmd -rh)
+  set cmd = ($cmd -rusage $touchdir/rusage.mri_ca_register.dat)
+  if($#GCARegIterations) set cmd = ($cmd -n $GCARegIterations)
+  if($#GCARegTol) set cmd = ($cmd -tol $GCARegTol)
+  if($UnCompress) set cmd = ($cmd -uncompress)
+  if($BigVentricles) then
+    set cmd = ($cmd -bigventricles -smoothness 0.5)
   else
-    set cmd = (mri_ca_register)
-    if($UseCuda) set cmd = (mri_ca_register_cuda)
-    set cmd = ($cmd $nocerebellum)
-    if($LHonly) set cmd = ($cmd -lh)
-    if($RHonly) set cmd = ($cmd -rh)
-    set cmd = ($cmd -rusage $touchdir/rusage.mri_ca_register.dat)
-    if($#GCARegIterations) set cmd = ($cmd -n $GCARegIterations)
-    if($#GCARegTol) set cmd = ($cmd -tol $GCARegTol)
-    if($UnCompress) set cmd = ($cmd -uncompress)
-    if($BigVentricles) then
-      set cmd = ($cmd -bigventricles -smoothness 0.5)
-    else
-      set cmd = ($cmd -nobigventricles)
-    endif
-    if($DoSecondPassRenorm) set cmd = ($cmd -secondpassrenorm)
-    if($UseTWMControlPoints) set cmd = ($cmd -twm $TWMControlPointsFile)
-    if($longitudinal) then # Init with warp from base.
-      set cmd = ($cmd -levels 2 -A 1 -l $longbasedir/mri/$m3z identity.nofile)
-    else
-      set cmd = ($cmd -T $lta)
-    endif
-    set cmd = ($cmd $UseCAAlignAfter)
-    set cmd = ($cmd -mask brainmask.mgz)
-    set cmd = ($cmd $xopts $norm ${GCADIR}/$GCA $m3z)
-    echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
-    if($RunIt) $fs_time $cmd |& tee -a $LF
-    set st = $status
-    if($st) then
-      echo "ERROR: mri_ca_register with non-zero status $st" |& tee -a $LF
-      echo "but continuing despite the error" |& tee -a $LF
-    endif
-  endif # Everything except non-linear long run.
+    set cmd = ($cmd -nobigventricles)
+  endif
+  if($DoSecondPassRenorm) set cmd = ($cmd -secondpassrenorm)
+  if($UseTWMControlPoints) set cmd = ($cmd -twm $TWMControlPointsFile)
+  if($longitudinal) then # Init with warp from base.
+    set cmd = ($cmd -levels 2 -A 1 -l $longbasedir/mri/$m3z $LongToBaseRegFile)
+  else
+    set cmd = ($cmd -T $lta)
+  endif
+  set cmd = ($cmd $UseCAAlignAfter)
+  set cmd = ($cmd -mask brainmask.mgz)
+  set cmd = ($cmd $xopts $norm ${GCADIR}/$GCA $m3z)
+  echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
+  if($RunIt) $fs_time $cmd |& tee -a $LF
+  set st = $status
+  if($st) then
+    echo "ERROR: mri_ca_register with non-zero status $st" |& tee -a $LF
+    echo "but continuing despite the error" |& tee -a $LF
+  endif
 
   echo $cmd > $touchdir/ca_register.touch
 endif
