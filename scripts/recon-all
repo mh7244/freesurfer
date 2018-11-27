@@ -2368,17 +2368,14 @@ skullstrip:
   if($DoCreateBaseSubj) then
     # create lists with all cross brainmasks and all ltas:
     set bmInVols=""
-    set ltaXforms=""
     foreach s ($BaseSubjsList)
       set bmInVols = ($bmInVols ${SUBJECTS_DIR}/${s}/mri/brainmask.mgz)
-      set ltaname = ${s}_to_${subjid}.lta
-      set ltaXforms = ($ltaXforms ${subjdir}/mri/transforms/${ltaname})
     end
 
     if ($#bmInVols == 1) then
       # only a single time point in base
       set cmd = (mri_convert \
-        -at $ltaXforms[1] \
+        -at $NthCrossToLongRegFiles[1] \
         -rt nearest \
         $bmInVols[1] brainmask_template.mgz )
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
@@ -2390,7 +2387,7 @@ skullstrip:
       # map all brainmask with nearest neighbor and average 0=mean=logicalOR:
       set cmd = (mri_robust_template --mov ${bmInVols})
       set cmd = ($cmd --average 0)
-      set cmd = ($cmd --ixforms ${ltaXforms})
+      set cmd = ($cmd --ixforms ${NthCrossToLongRegFiles})
       set cmd = ($cmd --noit)
       set cmd = ($cmd --finalnearest)
       set cmd = ($cmd --template brainmask_template.mgz)
