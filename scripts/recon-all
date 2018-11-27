@@ -1440,6 +1440,15 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
     end
+    # Create initial template.
+    set cmd = (mri_robust_template --mov ${nuInVols})
+    set cmd = ($cmd --average ${robust_template_avg_arg})
+    set cmd = ($cmd --ixforms ${ltaXforms})
+    set cmd = ($cmd --noit)
+    set cmd = ($cmd --template ${subjdir}/mri/nu_template.nii.gz)
+    echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
+    if($RunIt) $fs_time $cmd |& tee -a $LF
+    if($status) goto error_exit;
 
     # Non-linear template space creation.
     set cmd = (antsMultivariateTemplateConstruction2.sh)
@@ -5866,7 +5875,12 @@ while( $#argv != 0 )
 
     case "-base-nonlin":
       set DoNonlinBase = 1;
-      # don't break here; also switch on -base-affine:
+      if ( $#argv < 1) goto arg1err;
+      set subjid = $argv[1]; shift;
+      set subjid = `basename $subjid`; # removes trailing /
+      set DoCreateBaseSubj = 1;
+      set NoRandomness = 1;
+      breaksw
     case "-base-affine":
       set DoAffineBase = 1;
       # don't break here, but also switch on -base:
