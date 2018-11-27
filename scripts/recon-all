@@ -3003,7 +3003,6 @@ if($DoCALabel) then
     if ($#BaseSubjsList > $asegprecount) set aseg = ($alt)
     set cmd = (mri_fuse_segmentations -a $aseg -c $nocc -n $norm)
     set cmd = ($cmd --trx $NthCrossToLongRegFiles) # Cross TPs to current long.
-    if ($DoNonlinBase) set cmd = ($cmd --sigma 4)
     set cmd = ($cmd norm.mgz aseg.fused.mgz)
     echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
     if($RunIt) then
