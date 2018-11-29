@@ -1452,7 +1452,7 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
 
     # Non-linear template space creation.
     set cmd = (antsMultivariateTemplateConstruction2.sh)
-    set cmd = ($cmd -d 3 -r 0 -n 1 -t SyN -i 2 -q 50x50x40x10)
+    set cmd = ($cmd -d 3 -r 0 -n 1 -t SyN -i 2)
     set cmd = ($cmd -o ${adir}/)
     set cmd = ($cmd -z ${subjdir}/mri/nu_template.nii.gz)
     if ($OMP_NUM_THREADS > 1) set cmd = ($cmd -c 2 -j $OMP_NUM_THREADS)
