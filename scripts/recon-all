@@ -2723,15 +2723,19 @@ if($DoGCAReg) then
         --inxfm $xfm --outlta $lta --subject fsaverage --ltavox2vox)
   else # Cross or base:
     set invol = (nu.mgz)
-    if($DoCreateBaseSubj) set invol = norm_template.mgz
+    set mask = ($EMRegMask)
+    if($DoCreateBaseSubj) then
+      set invol = norm_template.mgz
+      set mask = brainmask.mgz
+    endif
 
     set cmd = (mri_em_register)
     if($UseCuda) set cmd = (mri_em_register_cuda)
     if ($LHonly) set cmd = ($cmd -lh)
     if ($RHonly) set cmd = ($cmd -rh)
     if ($LHonly || $RHonly) set cmd = ($cmd -spacing 4 -s 7)
-    if (! $DoCreateBaseSubj) set cmd = ($cmd -uns 3 -mask $EMRegMask) # Cross.
-    set cmd = ($cmd $nocerebellum)
+    if (! $DoCreateBaseSubj) set cmd = ($cmd -uns 3) # Cross.
+    set cmd = ($cmd $nocerebellum -mask $mask)
     set cmd = ($cmd -rusage $touchdir/rusage.mri_em_register.dat)
     set cmd = ($cmd $invol ${GCADIR}/$GCA $lta)
   endif
