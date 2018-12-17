@@ -3970,13 +3970,11 @@ if($DoSurfReg) then
     set xopts = `fsr-getxopts mris_register $XOptsFile $GlobXOptsFile`;
     set surf = (../surf/$hemi.sphere)
     if($longitudinal) then
-      set surf = ($longbasedir/surf/$hemi.sphere.reg)
-      #set base = ($longbasedir/surf/$hemi.sphere.reg)
-      #set surf = (../surf/$hemi.sphere.reg.from_base)
-      #set cmd = (mris_transform --is-inverse $base $LongToBaseRegFile $surf)
-      #echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
-      #if($RunIt) $fs_time $cmd |& tee -a $LF
-      #if($status) goto error_exit;
+      set surf = (../surf/$hemi.sphere.reg.from_base)
+      set cmd = (cp -v $longbasedir/surf/$hemi.sphere.reg $surf)
+      echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
+      if($RunIt) $fs_time $cmd |& tee -a $LF
+      if($status) goto error_exit;
     endif
 
     set cmd = (mris_register -curv)
