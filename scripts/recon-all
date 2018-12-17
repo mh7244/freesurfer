@@ -1452,7 +1452,7 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
 
     # Non-linear template space creation.
     set cmd = (antsMultivariateTemplateConstruction2.sh)
-    set cmd = ($cmd -d 3 -r 0 -n 1 -t SyN -i 2)
+    set cmd = ($cmd -d 3 -r 0 -n 1 -t SyN)
     set cmd = ($cmd -o ${adir}/)
     set cmd = ($cmd -z ${subjdir}/mri/nu_template.nii.gz)
     if ($OMP_NUM_THREADS > 1) set cmd = ($cmd -c 2 -j $OMP_NUM_THREADS)
@@ -1477,13 +1477,13 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
-      set cmd = (mri_concatenate_gcam --downsample)
+      set cmd = (mri_concatenate_gcam)
       set cmd = ($cmd --change-source $nuInVols[$i])
       set cmd = ($cmd $rawToBase[$i] $crossToBase[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
-      set cmd = (mri_concatenate_gcam --downsample)
+      set cmd = (mri_concatenate_gcam)
       set cmd = ($cmd $lta_inv[$i] $crossToBase[$i] $longToBase[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
@@ -1506,13 +1506,13 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
-      set cmd = (mri_concatenate_gcam --downsample)
+      set cmd = (mri_concatenate_gcam)
       set cmd = ($cmd --change-target $nuInVols[$i])
       set cmd = ($cmd $baseToRaw[$i] $baseToCross[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
-      set cmd = (mri_concatenate_gcam --downsample)
+      set cmd = (mri_concatenate_gcam)
       set cmd = ($cmd $baseToCross[$i] $ltaRforms[$i] $baseToLong[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
@@ -1524,7 +1524,7 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
       foreach j (`seq 1 $#BaseSubjsList`)
         if ($i == $j) continue
         set out = (${BaseSubjsList[$i]}_cross_to_${BaseSubjsList[$j]}_long.m3z)
-        set cmd = (mri_concatenate_gcam --downsample)
+        set cmd = (mri_concatenate_gcam)
         set cmd = ($cmd $crossToBase[$i] $baseToLong[$j] ${tdir}/${out})
         echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
         if($RunIt) $fs_time $cmd |& tee -a $LF
