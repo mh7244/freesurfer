@@ -8,9 +8,12 @@ cmake_minimum_required(VERSION 3.9)
 enable_language(C CXX Fortran)
 
 # a few build options
-option(BUILD_GUIS "Build GUIs" ON)
 option(MINIMAL "Only build core components" OFF)
+option(BUILD_QDEC "Build QDEC" OFF)
+option(BUILD_GUIS "Build GUIs" ON)
+option(USE_OPENCL "Build OpenCL algorithms" OFF)
 option(INFANT_MODULE "Include infant recon-all" OFF)
+option(USE_QT4 "Use Qt4 instead of Qt5 for GUIs" OFF)
 if(APPLE)
   option(BUILD_OSX_TK_GUIS "Compile OSX Tk GUIs" OFF)
 endif()
@@ -50,6 +53,12 @@ endif()
 
 # create a custom target "make install-nmr" to only install nmr-component files 
 add_custom_target(install-nmr COMMAND ${CMAKE_COMMAND} -D COMPONENT=nmr -P cmake_install.cmake)
+
+# create build stamp during install
+if(NOT FS_BUILD_STAMP)
+  set(FS_BUILD_STAMP "freesurfer")
+endif()
+install(CODE "file(WRITE ${CMAKE_INSTALL_PREFIX}/build-stamp.txt ${FS_BUILD_STAMP}\\n)")
 
 # --------------------------------------------------
 #   library dependencies and third-party packages
@@ -129,6 +138,7 @@ if(NOT ITK_DIR)
   set(ITK_DIR ${FS_PACKAGES_DIR}/itk/4.13.0)
 endif()
 find_package(ITK HINTS ${ITK_DIR} REQUIRED)
+# todo: since ITK is now required, we can get rid of this macro
 add_definitions(-DHAVE_ITK_LIBS)
 
 # -------- boost --------
@@ -159,10 +169,15 @@ if(NOT APPLE)
 endif()
 
 # -------- openCL --------
-find_package(OpenCL)
+if(USE_OPENCL)
+  find_package(OpenCL)
+endif()
 
 # -------- X11 ---------
 find_package(X11 REQUIRED)
+
+# -------- vtk --------
+find_package(VTK)
 
 # search for GUI libraries
 if(BUILD_GUIS)
@@ -171,21 +186,22 @@ if(BUILD_GUIS)
   find_package(OpenGL)
   if(OPENGL_FOUND)
     add_definitions(-DHAVE_OPENGL)
-    find_package(GLUT REQUIRED)  # since we have OpenGL, make sure we have glut too
+    # since we have OpenGL, make sure we have glut too
+    find_package(GLUT REQUIRED)
     add_definitions(-DHAVE_GLUT_LIBS)
   endif()
 
   # -------- qt --------
   find_package(QT)
 
-  # -------- vtk --------
-  find_package(VTK)
-
   # -------- tcltktixblt --------
   find_package(TCLTKTIXBLT)
 
   # -------- kwwidgets --------
-  find_package(KWWidgets)
+  # once qdec is deprecated, KWWidgets can be removed
+  if(BUILD_QDEC)
+    find_package(KWWidgets)
+  endif()
 
   # -------- wxwidgets --------
   # only used by mris_decimate_gui
@@ -392,6 +408,7 @@ add_subdirectories(
   mri_normalize
   mri_normalize_tp2
   mri_probedicom
+  mri_refine_seg
   mri_relabel_hypointensities
   mri_relabel_nonwm_hypos
   mri_remove_neck
@@ -686,6 +703,7 @@ if(NOT MINIMAL)
     mris_warp
     mris_watershed
     mrisp_write
+    nmovie_qt
     oct_register_mosaic
     oct_train
     optseq2

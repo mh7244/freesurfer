@@ -30,7 +30,8 @@
 #include "MyUtils.h"
 
 WidgetTimeCoursePlot::WidgetTimeCoursePlot(QWidget *parent) :
-  QWidget(parent), m_bAutoScale(true), m_nCurrentFrame(0), m_dMinPlot(0), m_dMaxPlot(1)
+  QWidget(parent), m_bAutoScale(true), m_nCurrentFrame(0), m_dMinPlot(0), m_dMaxPlot(1),
+  m_dXInterval(1), m_dXOffset(0), m_bShowFrameNumber(false)
 {
   setFocusPolicy(Qt::StrongFocus);
 }
@@ -45,8 +46,7 @@ void WidgetTimeCoursePlot::SetTimeCourseData(const QList<double> &data,
 {
   m_data = data;
   m_dTR = t_interval;
-  if (m_dTR <= 0)
-    m_dTR = 1000;
+
   if (m_dMin != min_val || m_dMax != max_val )
   {
     m_dMinPlot = min_val;
@@ -134,6 +134,7 @@ void WidgetTimeCoursePlot::paintEvent(QPaintEvent *e)
                        rc_plot.bottom() - (m_secondData[i]-dMin)/(dMax-dMin)*rc_plot.height());
   }
   p.setPen(QPen(QBrush(Qt::yellow), 2));
+  p.setClipRect(rc_plot);
   p.drawPolyline(pts, m_data.size());
   if (pts2)
   {
@@ -142,13 +143,10 @@ void WidgetTimeCoursePlot::paintEvent(QPaintEvent *e)
   }
 
   // draw cursor
-  if (rc_plot.contains(pts[m_nCurrentFrame]))
-  {
-    p.setPen(QPen(QBrush(Qt::red), 2));
-//    p.drawLine(pts[m_nCurrentFrame] - QPointF(0, qMin(20., pts[m_nCurrentFrame].y()-rc_plot.top())),
-//               pts[m_nCurrentFrame] + QPointF(0, qMin(20., rc_plot.bottom()-pts[m_nCurrentFrame].y())));
-    p.drawLine(pts[m_nCurrentFrame].x(), rc_plot.top(), pts[m_nCurrentFrame].x(), rc_plot.bottom());
-  }
+  p.setPen(QPen(QBrush(Qt::red), 2));
+  p.drawLine(pts[m_nCurrentFrame].x(), rc_plot.top(), pts[m_nCurrentFrame].x(), rc_plot.bottom());
+
+  p.setClipping(false);
   delete[] pts;
   delete[] pts2;
 
@@ -165,8 +163,9 @@ void WidgetTimeCoursePlot::paintEvent(QPaintEvent *e)
     if (y <= rc_plot.bottom())
     {
       QString strg = QString::number(dMetricPos);
-      p.drawText(QRectF(rect().left(), y-10, rc_plot.left()-5-rect().left(), 20),
+      p.drawText(QRectF(rect().left(), y-10, rc_plot.left()-rect().left()-6, 20),
                  Qt::AlignVCenter | Qt::AlignRight, strg);
+      p.drawLine(QPointF(rc_plot.left(), y), QPointF(rc_plot.left()-2, y));
     }
     dMetricPos += dMetricStep;
     y = rc_plot.bottom()-(dMetricPos-dMin)/(dMax-dMin)*rc_plot.height();
@@ -180,30 +179,65 @@ void WidgetTimeCoursePlot::paintEvent(QPaintEvent *e)
 
   // draw X metrics
   nMetricInterval = 50;
-  double dTR = 1; // m_dTR;
-  dMetricStep =  (m_data.size()-1)*dTR / (rc_plot.width() / nMetricInterval);
+  dMetricStep =  (m_data.size()-1) / (rc_plot.width() / nMetricInterval);
   dMetricStep = MyUtils::RoundToGrid( dMetricStep );
   dMetricPos = 0;
+  double dScale = 1;
+  int nPrecise = 0;
   double x = rc_plot.left();
-  while (x < rc_plot.right())
+  QString strXUnit = m_strXUnit;
+  if (!m_bShowFrameNumber)
   {
-    QString strg = QString::number(dMetricPos);
+    double np = log10(qAbs(m_dXInterval*dMetricStep));
+    if (np > 3 || np < -3)
+    {
+      np = ((int)np);
+      dScale = pow(10, -np);
+      strXUnit = QString("10^%1 %2").arg(np).arg(m_strXUnit);
+      nPrecise = 2;
+    }
+    else if (np < 2 && qAbs(m_dXInterval*dMetricStep) < 10)
+      nPrecise = 2;
+
+    dMetricStep = (m_data.size()-1) * qAbs(m_dXInterval) / rc_plot.width() * nMetricInterval;
+    dMetricStep = MyUtils::RoundToGrid(dMetricStep)/qAbs(m_dXInterval);
+    double dval = m_dXOffset/qAbs(m_dXInterval*dMetricStep) + 1;
+    if (m_dXInterval > 0)
+      dval = ((int)dval) + 1 - dval;
+    else
+      dval = dval - ((int)dval);
+    dMetricPos = dval*dMetricStep - dMetricStep;
+    while (dMetricPos < -dMetricStep/10)
+      dMetricPos += dMetricStep;
+    x = rc_plot.left() + dMetricPos*rc_plot.width()/(m_data.size()-1);
+  }
+  while (x <= rc_plot.right()+dMetricStep/10)
+  {
+    QString strg;
+    if (m_bShowFrameNumber)
+      strg = QString::number(dMetricPos);
+    else
+      strg = QString::number((m_dXOffset+m_dXInterval*dMetricPos)*dScale, 'f', nPrecise);
     p.drawText(QRectF(x-100, rc_plot.bottom()+5, 200, 20),
                Qt::AlignTop | Qt::AlignHCenter, strg);
+    if (x-1 >= rc_plot.left() && x-1 <= rc_plot.right())
+      p.drawLine(QPointF(x-1, rc_plot.bottom()), QPointF(x-1, rc_plot.bottom()+2));
 
     dMetricPos += dMetricStep;
-    x = rc_plot.left() + dMetricPos/((m_data.size()-1)*dTR)*rc_plot.width();
+    x = rc_plot.left() + dMetricPos*rc_plot.width()/(m_data.size()-1);
   }
 
-  QRectF rc = rect().adjusted(0, 0, 0, -3);
-  p.drawText(rc, Qt::AlignBottom | Qt::AlignHCenter, "Frame ");
+  QRectF rc = rect();
+  // draw current x value
+  QString x_strg = QString("Frame #%1").arg(m_nCurrentFrame);
+  if (!strXUnit.isEmpty())
+    x_strg += QString(" / %1 (%2)").arg((m_dXOffset+m_nCurrentFrame*m_dXInterval)*dScale).arg(strXUnit);
+  p.drawText(rc, Qt::AlignBottom | Qt::AlignHCenter, x_strg);
 
-  // draw current stats
-  QString strg = QString("Signal intensity: %1 %2  Frame: %3")
+  // draw current y value
+  QString strg = QString("Signal intensity: %1 %2")
       .arg(m_data[m_nCurrentFrame])
-      .arg(!m_secondData.isEmpty() ? QString("/ %1").arg(m_secondData[m_nCurrentFrame]) : "")
-      //   .arg(m_nCurrentFrame*m_dTR/1000)
-      .arg(m_nCurrentFrame);
+      .arg(!m_secondData.isEmpty() ? QString("/ %1").arg(m_secondData[m_nCurrentFrame]) : "");
   rc = rect().adjusted(0, 5, 0, 0);
   p.drawText(rc, Qt::AlignHCenter | Qt::AlignTop, strg);
   m_rectPlot = rc_plot;

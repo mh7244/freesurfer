@@ -67,7 +67,6 @@ static char *label_fname = NULL ;
 static int nbrs = 2 ;
 static int do_inflate = 0 ;
 static double disturb = 0 ;
-static int mrisDisturbVertices(MRI_SURFACE *mris, double amount) ;
 static int randomly_flatten = 0 ;
 static int   nospring = 0 ;
 static float scale = 3 ;
@@ -346,6 +345,12 @@ main(int argc, char *argv[])
     ErrorExit(ERROR_NOFILE, "%s: could not read surface file %s",
               Progname, in_surf_fname) ;
 
+  {
+    int vno;
+    for (vno = 0 ; vno < mris->nvertices ; vno++)
+      if (mris->vertices_topology[vno].vnum == 0)
+	mris->vertices[vno].ripflag = 1 ;
+  }
   if (sphere_flag)
   {
     MRIScenter(mris, mris) ;
@@ -377,6 +382,7 @@ main(int argc, char *argv[])
   } 
   else
   {
+    MRISsetNeighborhoodSizeAndDist(mris, mris->vertices_topology[0].nsizeMax);
     MRISresetNeighborhoodSize(mris, mris->vertices_topology[0].nsizeMax) ; // set back to max
     if (label_fname) // read in a label instead of a patch
     {
@@ -390,7 +396,7 @@ main(int argc, char *argv[])
       MRISclearMarks(mris) ;
       LabelMark(area, mris) ;
       MRISripUnmarked(mris) ;
-      MRISripFaces(mris);
+      MRISsetRipInFacesWithRippedVertices(mris);
       mris->patch = 1 ;
       mris->status = MRIS_CUT ;
       LabelFree(&area) ;
@@ -1011,24 +1017,6 @@ print_version(void)
   exit(1) ;
 }
 
-static int
-mrisDisturbVertices(MRI_SURFACE *mris, double amount)
-{
-  int    vno ;
-  VERTEX *v ;
-
-  for (vno = 0 ; vno < mris->nvertices ; vno++)
-  {
-    v = &mris->vertices[vno] ;
-    if (v->ripflag)
-      continue ;
-    v->x += randomNumber(-amount, amount) ;
-    v->y += randomNumber(-amount, amount) ;
-  }
-
-  MRIScomputeMetricProperties(mris) ;
-  return(NO_ERROR) ;
-}
 int
 MRISscaleUp(MRI_SURFACE *mris)
 {

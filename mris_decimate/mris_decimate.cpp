@@ -88,11 +88,14 @@ struct VertexLoadContext {
 static void vertexLoad(GtsPoint * p, gpointer * data)
 {
   VertexLoadContext* vertexLoadContext = (VertexLoadContext*)data;
-  MRI_SURFACE *mris = vertexLoadContext->mris;
 
-  mris->vertices[vertexLoadContext->nextVertex].x = p->x;
-  mris->vertices[vertexLoadContext->nextVertex].y = p->y;
-  mris->vertices[vertexLoadContext->nextVertex].z = p->z;
+  MRIS* mris = vertexLoadContext->mris;
+
+  MRISsetXYZ(mris, vertexLoadContext->nextVertex,
+    p->x,
+    p->y,
+    p->z);
+  
   unsigned int vertexID = vertexLoadContext->nextVertex;
   GTS_OBJECT(p)->reserved = GUINT_TO_POINTER(vertexID);
   vertexLoadContext->nextVertex++;
@@ -319,9 +322,9 @@ int decimateSurface(MRI_SURFACE **pmris,
     freeAndNULL(mris->vertices_topology[vno].f);
     freeAndNULL(mris->vertices_topology[vno].n);
     freeAndNULL(mris->vertices_topology[vno].v);
-    freeAndNULL(mris->vertices[vno].dist);
-    freeAndNULL(mris->vertices[vno].dist_orig);
   }
+  MRISfreeDistsButNotOrig(mris);
+  MRISfreeDistOrigs      (mris);
 
   // DNG 7/16/18: these two frees were in the original. I don't know how it ever worked
   // because the realloc below needs these to be valid pointers
