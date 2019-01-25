@@ -57,7 +57,7 @@ if nargin < 2 || isempty(hdronly)
   hdronly = 0;
 end
 
-[~, ~, ext] = fileparts(niftifile);
+[path, name, ext] = fileparts(niftifile);
 if strcmpi(ext, '.gz')
   new_niftifile = gunzip(niftifile);
   niftifile = new_niftifile{1};
