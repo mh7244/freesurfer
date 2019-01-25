@@ -116,9 +116,6 @@ r = 0;
 
 if (strcmpi(fname((length(fname)-3):length(fname)), '.MGZ') || ...
 		strcmpi(fname((length(fname)-3):length(fname)), '.GZ'))
-  cmd = sprintf('gzip -f %s ; mv %s.gz %s', fname, fname, fname);
-  unix(cmd);
+  tmp_fname = gzip(fname);
+  movefile(tmp_fname{1}, fname);
 end
-
-return;
-

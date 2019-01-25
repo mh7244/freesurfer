@@ -38,10 +38,10 @@ if(nargin ~= 2)
   return;
 end
 
-ext = niftifile((strlen(niftifile)-2):strlen(niftifile));
-if(strcmpi(ext,'.gz'))
+[path, name, ext] = fileparts(niftifile);
+if strcmpi(ext,'.gz')
   gzip_needed = 1;
-  niftifile = niftifile(1:strlen(niftifile)-3);
+  niftifile = fullfile(path, name);
   %fprintf('First, saving to %s before compressing\n',niftifile);
 else
   gzip_needed = 0;
@@ -56,6 +56,7 @@ if(sz(1) == 163842)
 end
 
 fp = fopen(niftifile,'w');
+cleanup_fp = onCleanup(@()fclose(fp));
 if(fp == -1)
   fprintf('ERROR: could not open %s\n',niftifile);
   return;
@@ -81,7 +82,7 @@ if(hdr.dim(2) > 2^15)
   hdr.dim(2) = -1;
 end
 
-hdr.pixdim = [hdr.pixdim(:)' repmat(0,[1 8])];
+hdr.pixdim = [hdr.pixdim(:)' zeros([1 8])];
 hdr.pixdim = hdr.pixdim(1:8);
 
 hdr.descrip = [hdr.descrip(:)' repmat(' ',[1 80])];
@@ -93,7 +94,7 @@ hdr.aux_file = hdr.aux_file(1:24);
 hdr.intent_name = [hdr.intent_name(:)' repmat(' ',[1 16])];
 hdr.intent_name = hdr.intent_name(1:16);
 
-hdr.magic = [hdr.magic(:)' repmat(0,[1 4])];
+hdr.magic = [hdr.magic(:)' zeros([1 4])];
 hdr.magic = hdr.magic(1:4);
 
 if(isempty(hdr.regular))  hdr.regular  = ' '; end
@@ -152,37 +153,29 @@ fwrite(fp,0,'char');
 fwrite(fp,0,'char');
 fwrite(fp,0,'char');
 
-npix = prod(size(hdr.vol));
+npix = numel(hdr.vol);
 switch(hdr.datatype)
- case   2, nitemswritten = fwrite(fp,hdr.vol,'uchar'); % dont use char
- case   4, nitemswritten = fwrite(fp,hdr.vol,'short');
- case   8, nitemswritten = fwrite(fp,hdr.vol,'int');
- case  16, nitemswritten = fwrite(fp,hdr.vol,'float');
- case  64, nitemswritten = fwrite(fp,hdr.vol,'double');
- case 512, nitemswritten = fwrite(fp,hdr.vol,'ushort');
- case 768, nitemswritten = fwrite(fp,hdr.vol,'uint');
- otherwise,
-  fprintf('WARNING: data type %d not supported, but writing as float',...
+  case   2, nitemswritten = fwrite(fp,hdr.vol,'uchar'); % dont use char
+  case   4, nitemswritten = fwrite(fp,hdr.vol,'short');
+  case   8, nitemswritten = fwrite(fp,hdr.vol,'int');
+  case  16, nitemswritten = fwrite(fp,hdr.vol,'float');
+  case  64, nitemswritten = fwrite(fp,hdr.vol,'double');
+  case 512, nitemswritten = fwrite(fp,hdr.vol,'ushort');
+  case 768, nitemswritten = fwrite(fp,hdr.vol,'uint');
+  otherwise
+    fprintf('WARNING: data type %d not supported, but writing as float',...
 	  hdr.datatype);
-  nitemswritten = fwrite(fp,hdr.vol,'float');
+    nitemswritten = fwrite(fp,hdr.vol,'float');
   return;
 end
-fclose(fp);
 
 if(npix ~= nitemswritten)
   fprintf('ERROR: tried to write %d, but only wrote %d',npix,nitemswritten);
   return;
 end
 
-if(gzip_needed)
-  cmd = sprintf('gzip -f %s', niftifile);
-  %fprintf('Compressing with\n');
-  %fprintf('   %s\n',cmd);
-  unix(cmd);
+if gzip_needed
+  gzip(niftifile);
+  delete(niftifile); % Only keep gzipped version.
 end
-
-
 err = 0;
-return;
-
-

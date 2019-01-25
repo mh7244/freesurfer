@@ -48,115 +48,71 @@ function hdr = load_nifti(niftifile,hdronly)
 %
 
 hdr = [];
-
-if(nargin < 1 | nargin > 2)
+if nargin < 1 || nargin > 2
   fprintf('hdr = load_nifti(niftifile,<hdronly>)\n');
   return;
 end
 
-if(~exist('hdronly','var')) hdronly = []; end
-if(isempty(hdronly)) hdronly = 0; end
+if nargin < 2 || isempty(hdronly)
+  hdronly = 0;
+end
 
-% unzip if it is compressed 
-ext = niftifile((strlen(niftifile)-2):strlen(niftifile));
-if(strcmpi(ext,'.gz'))
-  % Need to create unique file name (harder than it looks)
-  %r0 = rand('state');  rand('state', sum(100*clock));
-  %gzipped =  round(rand(1)*10000000 + sum(int16(niftifile))) + round(cputime);
-  %rand('state',r0);
-  new_niftifile = sprintf('%s.load_nifti.m.nii', tempname(fsgettmppath));
-  %fprintf('Uncompressing %s to %s\n',niftifile,new_niftifile);
-  gzipped = 1;
-  if(strcmp(computer,'MAC') || strcmp(computer,'MACI') || ismac)
-    cmd = sprintf('gunzip -c %s > %s', niftifile, new_niftifile)
-  else
-    cmd = sprintf('zcat %s > %s', niftifile, new_niftifile);
-  end
-  [status result] = unix(cmd);
-  if(status)
-    fprintf('cd %s\n',pwd);
-    fprintf('%s\n',cmd);
-    fprintf('ERROR: %s\n',result);
-    return;
-  end
-  niftifile = new_niftifile ;
-else
-  gzipped = -1 ;
+[~, ~, ext] = fileparts(niftifile);
+if strcmpi(ext, '.gz')
+  new_niftifile = gunzip(niftifile);
+  niftifile = new_niftifile{1};
+  cleanup_gz = onCleanup(@()delete(niftifile));
 end
 
 hdr = load_nifti_hdr(niftifile);
-if(isempty(hdr)) 
-  if(gzipped >=0) 
-    cmd = sprintf('rm -f %s', niftifile);
-    [status result] = unix(cmd); 
-    if(status)
-      fprintf('cd %s\n',pwd);
-      fprintf('%s\n',cmd);
-      fprintf('ERROR: %s\n',result);
-      return;
-    end
-  end
-  return; 
+if isempty(hdr)
+  return;
 end
 
 % Check for ico7
 nspatial = prod(hdr.dim(2:4));
 IsIco7 = 0;
-if(nspatial == 163842) IsIco7 = 1; end
+if(nspatial == 163842), IsIco7 = 1; end
 
 % If only header is desired, return now
 if(hdronly) 
-  if(gzipped >=0) unix(sprintf('rm -f %s', niftifile)); end
   if(IsIco7)
     % Reshape
     hdr.dim(2) = 163842;
     hdr.dim(3) = 1;
     hdr.dim(4) = 1;
   end
-  return; 
+  return;
 end
 
 % Get total number of voxels
 dim = hdr.dim(2:end);
-ind0 = find(dim==0);
-dim(ind0) = 1;
+dim(dim==0) = 1;
 nvoxels = prod(dim);
 
 % Open to read the pixel data
 fp = fopen(niftifile,'r',hdr.endian);
+cleanup_fp = onCleanup(@()fclose(fp));
 
 % Get past the header
 fseek(fp,round(hdr.vox_offset),'bof');
 
 switch(hdr.datatype)
- % Note: 'char' seems to work upto matlab 7.1, but 'uchar' needed
- % for 7.2 and higher. 
- case   2, [hdr.vol nitemsread] = fread(fp,inf,'uchar');
- case   4, [hdr.vol nitemsread] = fread(fp,inf,'short');
- case   8, [hdr.vol nitemsread] = fread(fp,inf,'int');
- case  16, [hdr.vol nitemsread] = fread(fp,inf,'float');
- case  64, [hdr.vol nitemsread] = fread(fp,inf,'double');
- case 512, [hdr.vol nitemsread] = fread(fp,inf,'ushort');
- case 768, [hdr.vol nitemsread] = fread(fp,inf,'uint');
- otherwise,
-  fprintf('ERROR: data type %d not supported',hdr.datatype);
-  hdr = [];
-  fclose(fp);
-  if(gzipped >=0) 
-    fprintf('Deleting temporary uncompressed file %s\n',niftifile);
-    unix(sprintf('rm -f %s', niftifile)); 
-  end
-  return;
-end
-
-fclose(fp);
-if(gzipped >=0) 
-  %fprintf('Deleting temporary uncompressed file %s\n',niftifile);
-  unix(sprintf('rm -f %s', niftifile)); 
+  % Note: 'char' seems to work upto matlab 7.1, but 'uchar' needed
+  % for 7.2 and higher.
+  case   2, [hdr.vol, nitemsread] = fread(fp,inf,'uchar');
+  case   4, [hdr.vol, nitemsread] = fread(fp,inf,'short');
+  case   8, [hdr.vol, nitemsread] = fread(fp,inf,'int');
+  case  16, [hdr.vol, nitemsread] = fread(fp,inf,'float');
+  case  64, [hdr.vol, nitemsread] = fread(fp,inf,'double');
+  case 512, [hdr.vol, nitemsread] = fread(fp,inf,'ushort');
+  case 768, [hdr.vol, nitemsread] = fread(fp,inf,'uint');
+  otherwise
+    error('ERROR: data type %d not supported', hdr.datatype);
 end
 
 % Check that that many voxels were read in
-if(nitemsread ~= nvoxels) 
+if(nitemsread ~= nvoxels)
   fprintf('ERROR: %s, read in %d voxels, expected %d\n',...
 	  niftifile,nitemsread,nvoxels);
   hdr = [];
@@ -177,10 +133,3 @@ if(hdr.scl_slope ~= 0)
   %	  hdr.scl_slope,hdr.scl_inter);
   hdr.vol = hdr.vol * hdr.scl_slope  + hdr.scl_inter;
 end
-
-return;
-
-
-
-
-
