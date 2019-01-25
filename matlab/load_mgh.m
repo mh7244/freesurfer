@@ -55,7 +55,7 @@ if nargin < 1 || nargin > 4
   return;
 end
 
-[~, ~, ext] = fileparts(fname);
+[path, name, ext] = fileparts(fname);
 if strcmpi(ext, '.mgz') || strcmpi(ext, '.gz')
   try
     new_fname = gunzip(fname);
