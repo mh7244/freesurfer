@@ -59,7 +59,12 @@ end
 
 [path, name, ext] = fileparts(niftifile);
 if strcmpi(ext, '.gz')
-  new_niftifile = gunzip(niftifile);
+  try
+    new_niftifile = gunzip(niftifile);
+  catch err
+    fprintf('ERROR: %s\n', err.message);
+    return
+  end
   niftifile = new_niftifile{1};
   cleanup_gz = onCleanup(@()delete(niftifile));
 end

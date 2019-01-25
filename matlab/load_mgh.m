@@ -57,7 +57,12 @@ end
 
 [~, ~, ext] = fileparts(fname);
 if strcmpi(ext, '.mgz') || strcmpi(ext, '.gz')
-  new_fname = gunzip(fname);
+  try
+    new_fname = gunzip(fname);
+  catch err
+    fprintf('ERROR: %s\n', err.message);
+    return
+  end
   fname = new_fname{1};
   cleanup_gz = onCleanup(@()delete(fname));
 end
@@ -73,14 +78,14 @@ if nargin < 4 || isempty(headeronly)
 end
 
 fid    = fopen(fname, 'rb', 'b');
-cleanup_fp = onCleanup(@()fclose(fid));
 if(fid == -1)
   fprintf('ERROR: could not open %s for reading\n',fname);
   return;
 end
+cleanup_fp = onCleanup(@()fclose(fid));
 v       = fread(fid, 1, 'int') ; 
 if isempty(v)
-  fprintf('ERROR: problem reading fname\n');
+  fprintf('ERROR: problem reading %s\n', fname);
   return
 end
 ndim1   = fread(fid, 1, 'int') ; 
