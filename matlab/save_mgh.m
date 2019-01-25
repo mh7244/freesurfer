@@ -114,8 +114,8 @@ fclose(fid) ;
 
 r = 0;
 
-if (strcmpi(fname((length(fname)-3):length(fname)), '.MGZ') || ...
-		strcmpi(fname((length(fname)-3):length(fname)), '.GZ'))
+[~, ~, ext] = fileparts(fname);
+if strcmpi(ext, '.MGZ') || strcmpi(ext, '.GZ')
   tmp_fname = gzip(fname);
   movefile(tmp_fname{1}, fname);
 end
