@@ -66,7 +66,8 @@ if strcmpi(ext, '.gz')
     return
   end
   niftifile = new_niftifile{1};
-  cleanup_gz = onCleanup(@()delete(niftifile));
+  if isunix(), cmd = 'rm -f %s'; else, cmd = 'del /f %s'; end
+  cleanup_gz = onCleanup(@()system(sprintf(cmd, niftifile)));
 end
 
 hdr = load_nifti_hdr(niftifile);

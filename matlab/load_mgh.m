@@ -64,7 +64,8 @@ if strcmpi(ext, '.mgz') || strcmpi(ext, '.gz')
     return
   end
   fname = new_fname{1};
-  cleanup_gz = onCleanup(@()delete(fname));
+  if isunix(), cmd = 'rm -f %s'; else, cmd = 'del /f %s'; end
+  cleanup_gz = onCleanup(@()system(sprintf(cmd, fname)));
 end
 
 if nargin < 2 || isempty(slices) || slices(1) < 0
