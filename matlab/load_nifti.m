@@ -148,5 +148,5 @@ for fid = fopen('all')
     fclose(fid);
   end
 end
-if isunix(), cmd = 'rm -f %s'; else, cmd = 'del /f %s'; end
+if isunix(), cmd = 'rm -f "%s"'; else; cmd = 'del /f "%s"'; end
 system(sprintf(cmd, filepath));
