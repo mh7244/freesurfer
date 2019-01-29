@@ -57,7 +57,7 @@ if nargin < 2 || isempty(hdronly)
   hdronly = 0;
 end
 
-[path, name, ext] = fileparts(niftifile);
+[path, name, ext] = fileparts(niftifile); %#ok<ASGLU>
 if strcmpi(ext, '.gz')
   try
     new_niftifile = gunzip(niftifile);
@@ -66,8 +66,7 @@ if strcmpi(ext, '.gz')
     return
   end
   niftifile = new_niftifile{1};
-  if isunix(), cmd = 'rm -f %s'; else, cmd = 'del /f %s'; end
-  cleanup_gz = onCleanup(@()system(sprintf(cmd, niftifile)));
+  cleangz = onCleanup(@()forcedel(niftifile));
 end
 
 hdr = load_nifti_hdr(niftifile);
@@ -98,7 +97,7 @@ nvoxels = prod(dim);
 
 % Open to read the pixel data
 fp = fopen(niftifile,'r',hdr.endian);
-cleanup_fp = onCleanup(@()fclose(fp));
+cleanfp = onCleanup(@()ismember(fp, fopen('all')) && fclose(fp));
 
 % Get past the header
 fseek(fp,round(hdr.vox_offset),'bof');
@@ -139,3 +138,15 @@ if(hdr.scl_slope ~= 0)
   %	  hdr.scl_slope,hdr.scl_inter);
   hdr.vol = hdr.vol * hdr.scl_slope  + hdr.scl_inter;
 end
+
+
+function forcedel(filepath)
+
+abspath = which(filepath);
+for fid = fopen('all')
+  if strcmp(abspath, fopen(fid))
+    fclose(fid);
+  end
+end
+if isunix(), cmd = 'rm -f %s'; else, cmd = 'del /f %s'; end
+system(sprintf(cmd, filepath));
