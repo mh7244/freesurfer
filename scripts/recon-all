@@ -1477,13 +1477,13 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
-      set cmd = (mri_concatenate_gcam)
+      set cmd = (mri_concatenate_gcam --downsample)
       set cmd = ($cmd --change-source $nuInVols[$i])
       set cmd = ($cmd $rawToBase[$i] $crossToBase[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
-      set cmd = (mri_concatenate_gcam)
+      set cmd = (mri_concatenate_gcam --downsample)
       set cmd = ($cmd $lta_inv[$i] $crossToBase[$i] $longToBase[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
@@ -1506,13 +1506,13 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
-      set cmd = (mri_concatenate_gcam)
+      set cmd = (mri_concatenate_gcam --downsample)
       set cmd = ($cmd --change-target $nuInVols[$i])
       set cmd = ($cmd $baseToRaw[$i] $baseToCross[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
-      set cmd = (mri_concatenate_gcam)
+      set cmd = (mri_concatenate_gcam --downsample)
       set cmd = ($cmd $baseToCross[$i] $ltaRforms[$i] $baseToLong[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
@@ -1524,7 +1524,7 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
       foreach j (`seq 1 $#BaseSubjsList`)
         if ($i == $j) continue
         set out = (${BaseSubjsList[$i]}_cross_to_${BaseSubjsList[$j]}_long.m3z)
-        set cmd = (mri_concatenate_gcam)
+        set cmd = (mri_concatenate_gcam --downsample)
         set cmd = ($cmd $crossToBase[$i] $baseToLong[$j] ${tdir}/${out})
         echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
         if($RunIt) $fs_time $cmd |& tee -a $LF
@@ -1535,34 +1535,36 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
     # To keep template space stable, ANTs applies the inverse average warp
     # to the template after each iteration. Undo this by averaging the TPs,
     # such that the template corresponds to the transforms again.
+    set ltas = ()
     foreach i (`seq 1 $#BaseSubjsList`)
-      set cmd = (mri_convert -odt float -at $rawToBase[$i])
-      set cmd = ($cmd $rawInVols[$i] $antsOut[$i])
+      set cmd = (mri_convert -rt cubic -at $crossToBase[$i])
+      set cmd = ($cmd $subjInVols[$i] $antsOut[$i])
       echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
+      set ltas = ($ltas identity.nofile)
     end
-    set cmd = (AverageImages 3 $antsTmp 1 $antsOut)
-    echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
-    if($RunIt) $fs_time $cmd |& tee -a $LF
-    if($status) goto error_exit;
-    set cmd = (mri_convert -odt uchar $antsTmp ${subjdir}/mri/orig.mgz)
+    set cmd = (mri_robust_template --mov $antsOut)
+    set cmd = ($cmd --average $robust_template_avg_arg)
+    set cmd = ($cmd --ixforms $ltas)
+    set cmd = ($cmd --noit)
+    set cmd = ($cmd --template ${subjdir}/mri/orig.mgz)
     echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
     if($RunIt) $fs_time $cmd |& tee -a $LF
     if($status) goto error_exit;
 
     foreach i (`seq 1 $#BaseSubjsList`)
-      set cmd = (mri_convert -odt float -at $crossToBase[$i])
+      set cmd = (mri_convert -rt cubic -at $crossToBase[$i])
       set cmd = ($cmd $normInVols[$i] $antsOut[$i])
       echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
     end
-    set cmd = (AverageImages 3 $antsTmp 1 $antsOut)
-    echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
-    if($RunIt) $fs_time $cmd |& tee -a $LF
-    if($status) goto error_exit;
-    set cmd = (mri_convert -odt uchar $antsTmp ${subjdir}/mri/norm_template.mgz)
+    set cmd = (mri_robust_template --mov $antsOut)
+    set cmd = ($cmd --average $robust_template_avg_arg)
+    set cmd = ($cmd --ixforms $ltas)
+    set cmd = ($cmd --noit)
+    set cmd = ($cmd --template ${subjdir}/mri/norm_template.mgz)
     echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
     if($RunIt) $fs_time $cmd |& tee -a $LF
     if($status) goto error_exit;
@@ -2819,7 +2821,7 @@ if($DoCAReg) then
   endif
 
   #if($longitudinal && $DoNonlinBase) then
-  #  set cmd = (mri_concatenate_gcam)
+  #  set cmd = (mri_concatenate_gcam --downsample)
   #  set cmd = ($cmd $LongToBaseRegFile $longbasedir/mri/$m3z $m3z)
   #  echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
   #  if($RunIt) $fs_time $cmd |& tee -a $LF
