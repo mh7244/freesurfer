@@ -73,8 +73,7 @@ WindowConfigureOverlay::WindowConfigureOverlay(QWidget *parent) :
   LayerCollection* lc = MainWindow::GetMainWindow()->GetLayerCollection("MRI");
   connect(lc, SIGNAL(LayerAdded(Layer*)), this, SLOT(UpdateUI()));
   connect(lc, SIGNAL(LayerRemoved(Layer*)), this, SLOT(UpdateUI()));
-  addAction(ui->actionCycleOverlay);
-  connect(ui->actionCycleOverlay, SIGNAL(triggered(bool)), SLOT(OnCycleOverlay()));
+  connect(MainWindow::GetMainWindow(), SIGNAL(CycleOverlayRequested()), SLOT(OnCycleOverlay()));
 }
 
 WindowConfigureOverlay::~WindowConfigureOverlay()
@@ -902,7 +901,7 @@ void WindowConfigureOverlay::OnComboOverlayChanged(int n)
 
 void WindowConfigureOverlay::OnCycleOverlay()
 {
-  if (isVisible() && m_layerSurface && m_layerSurface->GetNumberOfOverlays() > 1)
+  if (m_layerSurface && m_layerSurface->GetNumberOfOverlays() > 1)
   {
     ui->comboBoxOverlayList->setCurrentIndex((m_layerSurface->GetActiveOverlayIndex()+1)%m_layerSurface->GetNumberOfOverlays());
   }
