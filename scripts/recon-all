@@ -10,7 +10,7 @@
 #    $Author: greve $
 #    $Date: 2017/02/08 21:17:33 $
 #    $Revision: 1.601 $
-	#
+#
 # Copyright © 2011-2016 The General Hospital Corporation (Boston, MA) "MGH"
 #
 # Terms and conditions for use, reproduction, distribution and contribution
@@ -45,7 +45,7 @@ set CF = ();
 set CF_DEFAULT_NAME = recon-all.cmd;
 set AppendLog    = 1;
 set AppendStatus = 1;
-set DoTime = 0;
+set DoTime = 1;
 if($?SET_FS_CMD_TIMING) set DoTime = 1;
 set fs_time = "";
 set ErrorFile = /dev/null
@@ -58,11 +58,11 @@ set RHonly = 0 ;
 set nocerebellum = () ;  # will be set to -nocerebellum
 set tcsh61706 = (`tcsh --version | grep "6\.17\.06"`)
 if ("$tcsh61706" != "") then
-    echo ""
-    echo "WARNING: tcsh v6.17.06 has an exit code bug! Please update tcsh!"
-    echo ""
-    # workaround to force expected behavior:
-    set anyerror
+echo ""
+echo "WARNING: tcsh v6.17.06 has an exit code bug! Please update tcsh!"
+echo ""
+# workaround to force expected behavior:
+set anyerror
 endif
 
 set Force = 0;
@@ -104,12 +104,12 @@ set LHSeedCRS = ();   # SeedCRS point in the left  hemi wm for mri_fill #
 set UseMincMritotal = 0; # if 1, then use the BIC-MNI mritotal tal reg tools
 set DoTalairachUseNu = 0; # if 1, use nu.mgz as input to talairach stage
 set UseYa3tTalAtlas = 0; # if 1, use 3T18yoSchwartz young-adult 3T atlas
-                         # for tal_avi (recommended as 3T default by Avi S.)
+                     # for tal_avi (recommended as 3T default by Avi S.)
 set CustomTalAtlas = ""; # -custom-tal-atlas <name of atlas in average dir>
 set NoEMReg = 0; # Do not run mri_em_register. Instead convert tal.xfm to lta
 
 set DoNuMakeUchar = 1; # if 1, then run mri_nu_correct.mni using talairach.xfm
-                       # to run mri_make_uchar to correct histogram problem
+                   # to run mri_make_uchar to correct histogram problem
 # Neither of these are used right now
 set UseMaskNuCorrect = 0; # if 1, nu_correct runs with -mask brainmask.mgz
 set DilateMaskNuCorrect = (); # grow nu_correct mask by this amount
@@ -122,14 +122,15 @@ set WSSeedPoint = ();   # C R S
 set WSAtlas     = 0;    # 0=don't use atlas, 1=use atlas (for skull strip)
 set WSGcaAtlas  = 1;    # 1=use GCA atlas and registration to do skull strip
 set WSUseTalXfm = 0;    # 1=use talairach.xfm instead of talairach_with_skull
-                        # to do atlas alignment during mri_watershed
+                    # to do atlas alignment during mri_watershed
 set WSCopy = 0;         # Simply copy input to output ignoring other opts, 
-                        # for when brain is already stripped
+                    # for when brain is already stripped
 set DoGcut = 0;         # 1=run mri_gcut after mri_watershed
 set NuIterations = 2;   # Number of iterations for nu intensity correction
 set ConformMin = 0;     # 1=conformed to min dimension
 set ConformKeepDC = 0;  # Keep volume direction cosines when conforming
 set HiRes = 0;          # 1=hires option (conformed to min dimension)
+set DoConf2Hires = 0;
 set Norm3dIters = ();   # passed as -n to *both* mri_normalize runs
 set NormMaxGrad = 1;    # passed as -g to *both* mri_normalize runs
 set Norm1_b = ();       # passed as -b to the *first* mri_normalize only
@@ -144,42 +145,42 @@ set RmNeckRadius = 25;  # used by mri_remove_neck
 set UseCAAlign = (-align); # flag added to mri_ca_label
 set UseCAAlignAfter = (-align-after); # flag added to mri_ca_register
 set UseAseg  = 1 # when set to 0 (using -noaseg),then aseg.presurf.mgz not used
-                 # nor is ?h.cortex.label (which originates through the aseg)
+             # nor is ?h.cortex.label (which originates through the aseg)
 set NoAsegInorm2 = 0 # when set to 1 (using -noaseg-inorm2), then aseg.presurf
-                     # is not used during the 2nd mri_normalize step
+                 # is not used during the 2nd mri_normalize step
 set UseNoNeg = 0 # if 1, add '-remove_negative 1' to mris_sphere,mris_register
 set NoThicken = 0 # if 1, add '-thicken 0' to mri_segment
 set UnCompress = 0    # if 1, add '-uncompress' to mri_ca_reg
 set BigVentricles = 0 # if 1, add '-bigventricles' to mri_ca_reg.
-                      # else, add '-nobigventricles'
+                  # else, add '-nobigventricles'
 set DoSecondPassRenorm = 0 # if 1, add -secondpassrenorm to mri_ca_register
 set UseOldTopoFix = 1 # if 1, use mris_fix_topology instead of mris_topo_fixer
 set UseNewTopoFix = 0 # if 1, use mris_topo_fixer instead of mris_fix_topology
 set NoRandomness = 1 # if 1, seed critical binaries with identical seeds, to
-                     # ensure consistency in surface creation. otherwise, the
-                     # default is to seed with current time and date,
-                     # resulting in slightly different surfaces each run.
-                     # affects: mris_smooth, mris_sphere, mris_topology_fixer,
-                     # mris_topo_fixer, mris_ca_label,
-                     # mri_robust_template (1st-base-call-only)
+                 # ensure consistency in surface creation. otherwise, the
+                 # default is to seed with current time and date,
+                 # resulting in slightly different surfaces each run.
+                 # affects: mris_smooth, mris_sphere, mris_topology_fixer,
+                 # mris_topo_fixer, mris_ca_label,
+                 # mri_robust_template (1st-base-call-only)
 set RngSeed = 1234   # seed for random number generator, used only when
-                     # -norandomness flag is used, and can be overriden by
-                     # the flag -rng-seed <seed>
+                 # -norandomness flag is used, and can be overriden by
+                 # the flag -rng-seed <seed>
 set DoMultiStrip = 0 # if 1, then multiple instances of mri_watershed and
-                     # mri_em_register are run in order to determine the best
-                     # skull-strip
+                 # mri_em_register are run in order to determine the best
+                 # skull-strip
 set IsMPRAGE = 1     # if 1, then -mprage added to mri_normalize/segment, turn off with -no-mprage
 set IsWashuMPRAGE = 0 # if 1, then -washu_mprage added to mri_normalize/segment
 set DoConformWidth256 = 0 # if 1, then conform to 256^3 during
-                          # the mri_convert -conform step
+                      # the mri_convert -conform step
 set NoNormMGZ = 0; # set to 1 when -nosubcortseg or -noaseg flag is used,
-                   # which causes norm.mgz not to used during inorm2 step
+               # which causes norm.mgz not to used during inorm2 step
 set NoWMSA = 0;      # if 1, then -nowmsa flag is added to mri_ca_label
 set TH3Flag = 1;   #  turns on new vertex-wise volume calc for mris_anat_stats and ?h.volume
 set DoQdecCache = 0; # if 1, then create smoothed fsaverage surface files
 set measurelist = ( thickness area area.pial volume curv sulc \
-                    white.K white.H jacobian_white w-g.pct.mgh )
-                     # ^ these are the files smoothed by DoQdecCache (-qcache)
+                white.K white.H jacobian_white w-g.pct.mgh )
+                 # ^ these are the files smoothed by DoQdecCache (-qcache)
 set UserMeasureList = 0; # if 1, then 'measurelist' gets -measure args
 set measuredir = (); # for specifying an alternate path to measure files
 set fwhmlist = ( 0 5 10 15 20 25 ) # see DoQdecCache
@@ -191,13 +192,13 @@ set MakefileTarget = () # argument to recon-all -make
 set DoLabelV1 = 0; # if 1, create V1 label from O.Hinds V1 prediction atlas
 set DoRobustMotionCor = 1; # if 1, then use mri_robust_template for motion cor
 set mc_robust_template_avg_arg = 1; # when using mri_robust_template for motion
-                     # correction, construct template from: 0 Mean, 1 Median
+                 # correction, construct template from: 0 Mean, 1 Median
 set UseCuda = 0; # if 1 (-use-cuda), then use GPU versions of tools:
-                 # mri_em_register_cuda, mri_ca_register_cuda,
-                 # mris_inflate_cuda, mris_sphere_cuda
+             # mri_em_register_cuda, mri_ca_register_cuda,
+             # mris_inflate_cuda, mris_sphere_cuda
 set GetCuda = 0; # if 1 (-get-cuda) then print cuda info and exit
 set PialNoAparc = 0; # if 1 (-pial-noaparc), then add -noaparc flag to
-                     # mris_make_surfaces to bypass usage of parcellation
+                 # mris_make_surfaces to bypass usage of parcellation
 set UseCPsWithCaNorm = 0 # -canorm-usecps enable control points with ca_norm
 set DoT2pial = 0; # if 1, mris_make_surfaces refines pial using T2
 set T2max = ();
@@ -220,9 +221,9 @@ set DoDecimation = 0;
 # -openmp <num_threads> allows specifying more threads.
 # to support -make, where recon-all is re-entrant, look for FS_OMP_NUM_THREADS
 if ($?FS_OMP_NUM_THREADS) then
-  setenv OMP_NUM_THREADS $FS_OMP_NUM_THREADS # var declared in -openmp
+setenv OMP_NUM_THREADS $FS_OMP_NUM_THREADS # var declared in -openmp
 else
-  setenv OMP_NUM_THREADS 1 # default is one thread, -openmp will override
+setenv OMP_NUM_THREADS 1 # default is one thread, -openmp will override
 endif
 set OMP_NUM_SET = 0 # set to 1 if -openmp <num> is used
 
@@ -231,7 +232,7 @@ setenv ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS 1 # -itkthreads <num_threads>
 set DoSubfields = 0;
 
 set DoParallel = 0; # if 1, then run with -openmp 4 and -itkthreads 4, 
-                    # and run rh/lh stages in parallel
+                # and run rh/lh stages in parallel
 
 # Longitudinal processing:
 set longitudinal = 0;    # if 1, will run the longitudinal scheme
@@ -399,13 +400,13 @@ if ( -e /bin/pwd ) set PWD = /bin/pwd
 if($#argv == 0) goto usage_exit;
 set n = `echo $argv | egrep -e -help | wc -l`
 if($n != 0) then
-  set PrintHelp = 1;
-  goto usage_exit;
+set PrintHelp = 1;
+goto usage_exit;
 endif
 set n = `echo $argv | egrep -e -version | wc -l`
 if($n != 0) then
-  cat $FREESURFER_HOME/build-stamp.txt
-  exit 0;
+cat $FREESURFER_HOME/build-stamp.txt
+exit 0;
 endif
 
 source $FREESURFER_HOME/sources.csh
@@ -427,42 +428,42 @@ set bstampfile0 = $FREESURFER_HOME/build-stamp.txt
 mkdir -p $SUBJECTS_DIR/$subjid/scripts
 set bstampfile  = $SUBJECTS_DIR/$subjid/scripts/build-stamp.txt
 if(-e $bstampfile0) then
-  if(! -e $bstampfile) cp $bstampfile0 $bstampfile
-  set bstamp0 = `cat $bstampfile0`
-  set bstamp  = `cat $bstampfile`
-  if("$bstamp0" != "$bstamp") then
-    if($REQUIRE_FS_MATCH) then
-      echo "ERROR: FreeSurfer build stamps do not match"
-      echo "Subject Stamp: $bstamp"
-      echo "Current Stamp: $bstamp0"
-      exit 1;
-    else
-      echo "INFO: FreeSurfer build stamps do not match"
-    endif
-  endif
+if(! -e $bstampfile) cp $bstampfile0 $bstampfile
+set bstamp0 = `cat $bstampfile0`
+set bstamp  = `cat $bstampfile`
+if("$bstamp0" != "$bstamp") then
+if($REQUIRE_FS_MATCH) then
+  echo "ERROR: FreeSurfer build stamps do not match"
   echo "Subject Stamp: $bstamp"
   echo "Current Stamp: $bstamp0"
+  exit 1;
+else
+  echo "INFO: FreeSurfer build stamps do not match"
+endif
+endif
+echo "Subject Stamp: $bstamp"
+echo "Current Stamp: $bstamp0"
 endif
 rm -f $SUBJECTS_DIR/$subjid/scripts/patchdir.txt
 if($?PatchDir) then
-  echo "$PatchDir" > $SUBJECTS_DIR/$subjid/scripts/patchdir.txt
+echo "$PatchDir" > $SUBJECTS_DIR/$subjid/scripts/patchdir.txt
 endif
 cp $bstampfile0 $SUBJECTS_DIR/$subjid/scripts/lastcall.build-stamp.txt
 
 if ($DoMakefile) then
-  setenv RECONALL_MAKE_SUBJECT $subjid
-  set make_flags=( $MakefileTarget )
-  if ( ! $RunIt) set make_flags=( -n $make_flags )
-  echo "Subject '$subjid': make $make_flags"
-  make -f $FREESURFER_HOME/bin/recon-all.makefile ${make_flags}
-  set makestatus=($status)
-  unsetenv RECONALL_MAKE_SUBJECT
-  exit ($makestatus)
+setenv RECONALL_MAKE_SUBJECT $subjid
+set make_flags=( $MakefileTarget )
+if ( ! $RunIt) set make_flags=( -n $make_flags )
+echo "Subject '$subjid': make $make_flags"
+make -f $FREESURFER_HOME/bin/recon-all.makefile ${make_flags}
+set makestatus=($status)
+unsetenv RECONALL_MAKE_SUBJECT
+exit ($makestatus)
 endif
 
 if ($DoTime) then
-  fs_time ls >& /dev/null
-  if ( ! $status) set fs_time=(fs_time)
+fs_time ls >& /dev/null
+if ( ! $status) set fs_time=(fs_time)
 endif
 
 echo "INFO: SUBJECTS_DIR is $SUBJECTS_DIR"
@@ -477,21 +478,21 @@ set DateString = "`date '+%y%m%d%H%M'`"
 
 # -superclean deletes everything except contents of mri/orig
 if($DoSuperClean) then
-  echo "super-cleaning..."
-  set cmd = (rm -Rfv \
-    $subjdir/label \
-    $subjdir/scripts \
-    $subjdir/stats \
-    $subjdir/surf \
-    $subjdir/tmp \
-    $subjdir/touch \
-    $subjdir/trash \
-    $subjdir/mri/transforms)
-  echo "$cmd"
-  if($RunIt) $cmd
-  set cmd = (rm -v $subjdir/mri/* $subjdir/mri/.xdebug*)
-  echo "$cmd"
-  if($RunIt) $cmd
+echo "super-cleaning..."
+set cmd = (rm -Rfv \
+$subjdir/label \
+$subjdir/scripts \
+$subjdir/stats \
+$subjdir/surf \
+$subjdir/tmp \
+$subjdir/touch \
+$subjdir/trash \
+$subjdir/mri/transforms)
+echo "$cmd"
+if($RunIt) $cmd
+set cmd = (rm -v $subjdir/mri/* $subjdir/mri/.xdebug*)
+echo "$cmd"
+if($RunIt) $cmd
 endif
 
 cd $subjdir # This variable is set in check_params
@@ -501,58 +502,58 @@ set touchdir = $subjdir/touch
 
 # Create cmd and env files from scratch
 if(! $DoVersionsOnly) then
-  set CF = ($subjdir/scripts/$CF_DEFAULT_NAME)
-  # rm -f $CF, let it accumulate commands
-  echo "\n\n#---------------------------------" >> $CF
-  echo "# New invocation of recon-all `date` " >> $CF
-  # Create a separate file for the env
-  set ENVF = $subjdir/scripts/recon-all.env
-  if(-e $ENVF) mv -f $ENVF $ENVF.bak
-  date                                     >> $ENVF
-  echo "FREESURFER_HOME $FREESURFER_HOME"  >> $ENVF
-  echo "Actual FREESURFER_HOME $freesurfer_home_true"  >> $ENVF
-  pwd                                      >> $ENVF
-  echo "setenv SUBJECTS_DIR $SUBJECTS_DIR" >> $ENVF
-  echo $inputargs                          >> $ENVF
-  uname -a                                 >> $ENVF
-  echo ""                                  >> $ENVF
-  limit                                    >> $ENVF
-  echo ""                                  >> $ENVF
-  printenv                                 >> $ENVF
+set CF = ($subjdir/scripts/$CF_DEFAULT_NAME)
+# rm -f $CF, let it accumulate commands
+echo "\n\n#---------------------------------" >> $CF
+echo "# New invocation of recon-all `date` " >> $CF
+# Create a separate file for the env
+set ENVF = $subjdir/scripts/recon-all.env
+if(-e $ENVF) mv -f $ENVF $ENVF.bak
+date                                     >> $ENVF
+echo "FREESURFER_HOME $FREESURFER_HOME"  >> $ENVF
+echo "Actual FREESURFER_HOME $freesurfer_home_true"  >> $ENVF
+pwd                                      >> $ENVF
+echo "setenv SUBJECTS_DIR $SUBJECTS_DIR" >> $ENVF
+echo $inputargs                          >> $ENVF
+uname -a                                 >> $ENVF
+echo ""                                  >> $ENVF
+limit                                    >> $ENVF
+echo ""                                  >> $ENVF
+printenv                                 >> $ENVF
 endif
 
 if($DoVersionsOnly) then
-  if (-e /dev/stdout) then
-    set LF = /dev/stdout
-    set SF = /dev/stdout
-  else
-    set LF = /dev/null
-    set SF = /dev/null
-  endif
+if (-e /dev/stdout) then
+set LF = /dev/stdout
+set SF = /dev/stdout
+else
+set LF = /dev/null
+set SF = /dev/null
+endif
 endif
 
 # ------------ Create the log file --------------- #
 if($#LF == 0) then
-  set LF = ($subjdir/scripts/$LF_DEFAULT_NAME)
-  if(-e $LF) then
-    ls -l $LF
-    if(! $AppendLog) then
-      mv -f $LF $LF.old
-    else
-      # if running using -make, then dont bother with repeated info dumps
-      if ($?RECONALL_MAKE_SUBJECT) goto skip_new_invo
-      echo "\n\n"  >> $LF
-      echo "New invocation of recon-all "  >> $LF
-      echo "\n\n"  >> $LF
-    endif
-  endif
+set LF = ($subjdir/scripts/$LF_DEFAULT_NAME)
+if(-e $LF) then
+ls -l $LF
+if(! $AppendLog) then
+  mv -f $LF $LF.old
 else
-  if(-e $LF) then
-    if ($?RECONALL_MAKE_SUBJECT) goto skip_new_invo
-    echo "\n\n"  >> $LF
-    echo "New invocation of recon-all "  >> $LF
-    echo "\n\n"  >> $LF
-  endif
+  # if running using -make, then dont bother with repeated info dumps
+  if ($?RECONALL_MAKE_SUBJECT) goto skip_new_invo
+  echo "\n\n"  >> $LF
+  echo "New invocation of recon-all "  >> $LF
+  echo "\n\n"  >> $LF
+endif
+endif
+else
+if(-e $LF) then
+if ($?RECONALL_MAKE_SUBJECT) goto skip_new_invo
+echo "\n\n"  >> $LF
+echo "New invocation of recon-all "  >> $LF
+echo "\n\n"  >> $LF
+endif
 endif
 skip_new_invo:
 
@@ -567,23 +568,23 @@ echo "setenv SUBJECTS_DIR $SUBJECTS_DIR" >> $LF
 echo "FREESURFER_HOME $FREESURFER_HOME" >> $LF
 echo "Actual FREESURFER_HOME $freesurfer_home_true" >> $LF
 if (-e $FREESURFER_HOME/build-stamp.txt) then
-  echo "build-stamp.txt: `cat $FREESURFER_HOME/build-stamp.txt`" >> $LF
+echo "build-stamp.txt: `cat $FREESURFER_HOME/build-stamp.txt`" >> $LF
 endif
 uname -a | tee -a $LF
 limit >> $LF
 if (-e /usr/bin/free) then
-  echo "" >> $LF
-  /usr/bin/free >> $LF
-  echo "" >> $LF
+echo "" >> $LF
+/usr/bin/free >> $LF
+echo "" >> $LF
 endif
 if ("`uname -s`" == "Darwin") then
-  echo "" >> $LF
-  /usr/bin/top -l 1 | grep PhysMem >> $LF
-  echo "" >> $LF
+echo "" >> $LF
+/usr/bin/top -l 1 | grep PhysMem >> $LF
+echo "" >> $LF
 endif
 if($?PBS_JOBID) then
-  # If the job has been submitted to launchpad, get jobid
-  echo "pbsjob $PBS_JOBID"  >> $LF
+# If the job has been submitted to launchpad, get jobid
+echo "pbsjob $PBS_JOBID"  >> $LF
 endif
 
 # check for existence of bc (binary calculator)                                                                                               
@@ -591,8 +592,8 @@ endif
 set cmd = (which bc)
 $cmd >& /dev/null
 if($status) then
-  echo "ERROR: OS is missing bc (binary calculator) utility" |& tee -a $LF
-  exit 1;
+echo "ERROR: OS is missing bc (binary calculator) utility" |& tee -a $LF
+exit 1;
 endif
 
 ## gather all versions here
@@ -600,88 +601,88 @@ echo "########################################" >> $LF
 echo "program versions used" >> $LF
 echo $VERSION                >> $LF
 set allinfocmds = (\
-	lta_convert \
-	mri_and \
-	mri_annotation2label \
-	mri_aparc2aseg \
-	mri_aparc2wmseg \
-	mri_binarize \
-	mri_ca_label \
-	mri_ca_normalize \
-	mri_ca_register \
-	mri_cc \
-	mri_compute_overlap \
-	mri_compute_seg_overlap \
-	mri_concat \
-	mri_concatenate_lta \
-	mri_convert \
-	mri_diff \
-	mri_edit_wm_with_aseg \
-	mri_em_register \
-	mri_fill \
-	mri_fuse_segmentations \
-	mri_fwhm \
-	mri_gcut \
-	mri_info \
-	mri_label2label \
-	mri_label2vol \
-	mri_log_likelihood \
-	mri_mask \
-	mri_matrix_multiply \
-	mri_normalize \
-	mri_normalize_tp2 \
-  mri_or \
-	mri_relabel_hypointensities \
-	mri_relabel_nonwm_hypos \
-	mri_remove_neck \
-	mri_robust_register \
-	mri_robust_template \
-	mris_anatomical_stats \
-	mris_ca_label \
-	mris_calc \
-	mris_convert \
-	mris_curvature \
-	mris_curvature_stats \
-	mris_diff \
-	mris_divide_parcellation \
-	mri_segment \
-	mri_segstats \
-	mris_euler_number \
-	mris_fix_topology \
-	mris_topo_fixer \
-	mris_jacobian \
-	mris_label2annot \
-	mris_left_right_register \
-	mris_make_surfaces \
-	mrisp_paint \
-	mris_register \
-	mris_smooth \
-	mris_sphere \
-	mris_surface_stats \
-	mri_stats2seg \
-	mris_thickness \
-	mris_thickness_diff \
-	mris_topo_fixer \
-	mri_surf2surf \
-	mri_surf2vol \
-	mri_surfcluster \
-	mris_volmask \
-	mri_tessellate \
-	mri_vol2surf \
-	mri_vol2vol \
-	mri_voldiff \
-	mri_watershed \
-  tkregister2_cmdl \
+lta_convert \
+mri_and \
+mri_annotation2label \
+mri_aparc2aseg \
+mri_aparc2wmseg \
+mri_binarize \
+mri_ca_label \
+mri_ca_normalize \
+mri_ca_register \
+mri_cc \
+mri_compute_overlap \
+mri_compute_seg_overlap \
+mri_concat \
+mri_concatenate_lta \
+mri_convert \
+mri_diff \
+mri_edit_wm_with_aseg \
+mri_em_register \
+mri_fill \
+mri_fuse_segmentations \
+mri_fwhm \
+mri_gcut \
+mri_info \
+mri_label2label \
+mri_label2vol \
+mri_log_likelihood \
+mri_mask \
+mri_matrix_multiply \
+mri_normalize \
+mri_normalize_tp2 \
+mri_or \
+mri_relabel_hypointensities \
+mri_relabel_nonwm_hypos \
+mri_remove_neck \
+mri_robust_register \
+mri_robust_template \
+mris_anatomical_stats \
+mris_ca_label \
+mris_calc \
+mris_convert \
+mris_curvature \
+mris_curvature_stats \
+mris_diff \
+mris_divide_parcellation \
+mri_segment \
+mri_segstats \
+mris_euler_number \
+mris_fix_topology \
+mris_topo_fixer \
+mris_jacobian \
+mris_label2annot \
+mris_left_right_register \
+mris_make_surfaces \
+mrisp_paint \
+mris_register \
+mris_smooth \
+mris_sphere \
+mris_surface_stats \
+mri_stats2seg \
+mris_thickness \
+mris_thickness_diff \
+mris_topo_fixer \
+mri_surf2surf \
+mri_surf2vol \
+mri_surfcluster \
+mris_volmask \
+mri_tessellate \
+mri_vol2surf \
+mri_vol2vol \
+mri_voldiff \
+mri_watershed \
+tkregister2_cmdl \
 )
 # Note: these commands do not properly support -all-info and should be fixed:
 # 	mri_add_xform_to_header mri_mc 	mri_deface mris_inflate 	talairach_afd
 # 	mris_info 	talairach_avi
 foreach cmd ($allinfocmds)
-  $cmd -all-info >> $LF
-  if($status) then
-    echo "ERROR: Executable '${cmd} -all-info failed! Is it missing from the distribution?'" |& tee -a $LF
-    exit 1;
-  endif
+$cmd -all-info >> $LF
+if($status) then
+echo "ERROR: Executable '${cmd} -all-info failed! Is it missing from the distribution?'" |& tee -a $LF
+exit 1;
+endif
 end
 mri_motion_correct.fsl -version >> $LF
 if (-e $FREESURFER_HOME/bin/flirt.fsl) flirt.fsl -version >> $LF
@@ -709,128 +710,128 @@ set ErrorFile = $subjdir/scripts/recon-all.error
 rm -f $ErrorFile
 # Delete the done file. This is created when recon-all exits normally
 if($#DoneFile == 0) then
-  set DoneFile = $subjdir/scripts/recon-all.done
-  rm -f $DoneFile
+set DoneFile = $subjdir/scripts/recon-all.done
+rm -f $DoneFile
 endif
 
 # ------------ Create the IsRunning File --------- #
 if($DoIsRunning) then
-  set IsRunningLH   = $subjdir/scripts/IsRunning.lh
-  set IsRunningRH   = $subjdir/scripts/IsRunning.rh
-  set IsRunningLHRH = $subjdir/scripts/IsRunning.lh+rh
-  set bailfile = ();
-  if($#hemilist == 1) then
-    set hemi = $hemilist;
-    set IsRunningFile = $subjdir/scripts/IsRunning.$hemi
-    if(-e $IsRunningLHRH) set bailfile = $IsRunningLHRH
-  else
-    set IsRunningFile = $subjdir/scripts/IsRunning.lh+rh
-    if(-e $IsRunningLH)   set bailfile = $IsRunningLH
-    if(-e $IsRunningRH)   set bailfile = $IsRunningRH
-  endif
-  if(-e $IsRunningFile) set bailfile = $IsRunningFile
-  if($#bailfile) then
-    echo ""
-    echo "ERROR: it appears that recon-all is already running"
-    echo "for $subjid based on the presence of $bailfile. It could"
-    echo "also be that recon-all was running at one point but"
-    echo "died in an unexpected way. If it is the case that there"
-    echo "is a process running, you can kill it and start over or"
-    echo "just let it run. If the process has died, you should type:"
-    echo ""
-    echo "rm $bailfile"
-    echo ""
-    echo "and re-run. Or you can add -no-isrunning to the recon-all"
-    echo "command-line. The contents of this file are:"
-    echo "----------------------------------------------------------"
-    cat  $bailfile
-    echo "----------------------------------------------------------"
-    exit 1;
-  endif
-  echo "------------------------------" > $IsRunningFile
-  echo "SUBJECT $subjid" >> $IsRunningFile
-  echo "HEMI    $hemilist"  >> $IsRunningFile
-  echo "DATE `date`"     >> $IsRunningFile
-  echo "USER $user"      >> $IsRunningFile
-  echo "HOST `hostname`" >> $IsRunningFile
-  echo "PROCESSID $$ "   >> $IsRunningFile
-  echo "PROCESSOR `uname -m`" >> $IsRunningFile
-  echo "OS `uname -s`"       >> $IsRunningFile
-  uname -a         >> $IsRunningFile
-  echo $VERSION    >> $IsRunningFile
-  if($?PBS_JOBID) then
-    echo "pbsjob $PBS_JOBID"  >> $IsRunningFile
-  endif
+set IsRunningLH   = $subjdir/scripts/IsRunning.lh
+set IsRunningRH   = $subjdir/scripts/IsRunning.rh
+set IsRunningLHRH = $subjdir/scripts/IsRunning.lh+rh
+set bailfile = ();
+if($#hemilist == 1) then
+set hemi = $hemilist;
+set IsRunningFile = $subjdir/scripts/IsRunning.$hemi
+if(-e $IsRunningLHRH) set bailfile = $IsRunningLHRH
+else
+set IsRunningFile = $subjdir/scripts/IsRunning.lh+rh
+if(-e $IsRunningLH)   set bailfile = $IsRunningLH
+if(-e $IsRunningRH)   set bailfile = $IsRunningRH
+endif
+if(-e $IsRunningFile) set bailfile = $IsRunningFile
+if($#bailfile) then
+echo ""
+echo "ERROR: it appears that recon-all is already running"
+echo "for $subjid based on the presence of $bailfile. It could"
+echo "also be that recon-all was running at one point but"
+echo "died in an unexpected way. If it is the case that there"
+echo "is a process running, you can kill it and start over or"
+echo "just let it run. If the process has died, you should type:"
+echo ""
+echo "rm $bailfile"
+echo ""
+echo "and re-run. Or you can add -no-isrunning to the recon-all"
+echo "command-line. The contents of this file are:"
+echo "----------------------------------------------------------"
+cat  $bailfile
+echo "----------------------------------------------------------"
+exit 1;
+endif
+echo "------------------------------" > $IsRunningFile
+echo "SUBJECT $subjid" >> $IsRunningFile
+echo "HEMI    $hemilist"  >> $IsRunningFile
+echo "DATE `date`"     >> $IsRunningFile
+echo "USER $user"      >> $IsRunningFile
+echo "HOST `hostname`" >> $IsRunningFile
+echo "PROCESSID $$ "   >> $IsRunningFile
+echo "PROCESSOR `uname -m`" >> $IsRunningFile
+echo "OS `uname -s`"       >> $IsRunningFile
+uname -a         >> $IsRunningFile
+echo $VERSION    >> $IsRunningFile
+if($?PBS_JOBID) then
+echo "pbsjob $PBS_JOBID"  >> $IsRunningFile
+endif
 endif
 
 # ------- Check FREESURFER_HOME consistency --------------#
 set CSDF = $subjdir/scripts/csurfdir
 if($DoCleanCSDF) rm -vf $CSDF
 if(-e $CSDF) then
-  set tmp = `cat $CSDF`;
-  if($tmp != $FREESURFER_HOME) then
-   echo "INFO: current FREESURFER_HOME does not match that of previous processing." \
-     | tee -a $LF
-   echo "    Current: $FREESURFER_HOME" | tee -a $LF
-   echo "    Previous: $tmp" | tee -a $LF
-   sleep 1;
-  endif
+set tmp = `cat $CSDF`;
+if($tmp != $FREESURFER_HOME) then
+echo "INFO: current FREESURFER_HOME does not match that of previous processing." \
+ | tee -a $LF
+echo "    Current: $FREESURFER_HOME" | tee -a $LF
+echo "    Previous: $tmp" | tee -a $LF
+sleep 1;
+endif
 endif
 
 # --------------- Create the status file ---------------- #
 if($#SF == 0) then
-  set SF = ($subjdir/scripts/$SF_DEFAULT_NAME)
-  if(-e $SF) then
-    if(! $AppendStatus) then
-       mv -f $SF $SF.old
-    else
-      echo "\n\n"  >> $SF
-      echo "New invocation of recon-all "  >> $SF
-      echo "\n\n"  >> $SF
-    endif
-  endif
+set SF = ($subjdir/scripts/$SF_DEFAULT_NAME)
+if(-e $SF) then
+if(! $AppendStatus) then
+   mv -f $SF $SF.old
 else
-  if(-e $SF) then
-    echo "\n\n"  >> $SF
-    echo "New invocation of recon-all "  >> $SF
-    echo "\n\n"  >> $SF
-  endif
+  echo "\n\n"  >> $SF
+  echo "New invocation of recon-all "  >> $SF
+  echo "\n\n"  >> $SF
+endif
+endif
+else
+if(-e $SF) then
+echo "\n\n"  >> $SF
+echo "New invocation of recon-all "  >> $SF
+echo "\n\n"  >> $SF
+endif
 endif
 echo "status file for recon-all" >> $SF
 date >> $SF
 
 # Put a copy of myself (this script) in the scripts dir
 if ("`uname -s`" == "Linux") then
-  set FullProgName = `readlink -f $0`; 
-  cp -v $FullProgName $subjdir/scripts/recon-all.local-copy
+set FullProgName = `readlink -f $0`; 
+cp -v $FullProgName $subjdir/scripts/recon-all.local-copy
 endif
 
 
 # Wait for a file to appear #
 if($#WaitForFile != 0) then
-  echo "Waiting for $WaitForFile" |& tee -a $SF |& tee -a $LF
-  echo "  WaitSleep $WaitSleep" |& tee -a $SF |& tee -a $LF
-  echo "  nWaitsMax $nWaitsMax" |& tee -a $SF |& tee -a $LF
-  @ nWaits = 1;
-  while(! -e $WaitForFile && $nWaits < $nWaitsMax)
-    sleep $WaitSleep;
-    @ nWaits = $nWaits + 1;
-  end
-  if(! -e $WaitForFile ) then
-    echo "ERROR: timed out waiting for $WaitForFile"
-    goto error_exit;
-  endif
-  echo "Finished Waiting `date`" |& tee -a $SF |& tee -a $LF
+echo "Waiting for $WaitForFile" |& tee -a $SF |& tee -a $LF
+echo "  WaitSleep $WaitSleep" |& tee -a $SF |& tee -a $LF
+echo "  nWaitsMax $nWaitsMax" |& tee -a $SF |& tee -a $LF
+@ nWaits = 1;
+while(! -e $WaitForFile && $nWaits < $nWaitsMax)
+sleep $WaitSleep;
+@ nWaits = $nWaits + 1;
+end
+if(! -e $WaitForFile ) then
+echo "ERROR: timed out waiting for $WaitForFile"
+goto error_exit;
+endif
+echo "Finished Waiting `date`" |& tee -a $SF |& tee -a $LF
 endif
 
 if( ! $RunIt) then
-  echo "INFO: -dontrun flag is in effect, so subsequent commands" |& tee -a $LF
-  echo "may not have accurate arguments!" |& tee -a $LF
+echo "INFO: -dontrun flag is in effect, so subsequent commands" |& tee -a $LF
+echo "may not have accurate arguments!" |& tee -a $LF
 endif
 
 if ( $DoRestart) then
-    if( -e $RestartFile) then
-        echo "Restart file $RestartFile exists <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
+if( -e $RestartFile) then
+    echo "Restart file $RestartFile exists <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
         goto Restart
     endif
 endif
@@ -1597,171 +1598,25 @@ if($DoMotionCor) then
   set origvol = $subjdir/mri/orig.mgz
   set rawavg  = $subjdir/mri/rawavg.mgz
 
-  if ($longitudinal) then
-    # in order to create orig.mgz in LONG we need at least 001.mgz in CROSS:
-    if ( ! -e ${SUBJECTS_DIR}/${tpNid}/mri/orig/001.mgz ) then
-      echo "ERROR: no CROSS run data found in ${SUBJECTS_DIR}/${tpNid}/mri/orig/. Make sure to" \
-        |& tee -a $LF
-      echo "have a volume called 001.mgz there." |& tee -a $LF
-      echo "If you have a second run of data call it 002.mgz, etc." \
-        |& tee -a $LF
-      echo "See also: http://surfer.nmr.mgh.harvard.edu/fswiki/FsTutorial/Conversion" \
-        |& tee -a $LF
-      goto error_exit;
-    endif
+  set origvol = $subjdir/mri/orig.mgz
 
-    # use orig/00?.mgz from cross:
-    set CrossList = `ls ${SUBJECTS_DIR}/${tpNid}/mri/orig/[0-9][0-9][0-9].mgz`;
-
-    if($#CrossList == 1) then
-      # if only single input, directly resample to base space
-      set cmd = (mri_convert -at $CrossToLongRegFile -odt uchar)
-      set cmd = ($cmd -rt cubic)
-      set cmd = ($cmd ${SUBJECTS_DIR}/${tpNid}/mri/orig/001.mgz)
-      set cmd = ($cmd ${origvol})
-      echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
-      if($RunIt) $fs_time $cmd |& tee -a $LF
-      if($status) goto error_exit;
-      # also create rawavg (usually float) image
-      set cmd = (mri_convert -at $CrossToLongRegFile)
-      set cmd = ($cmd -rt cubic)
-      set cmd = ($cmd ${SUBJECTS_DIR}/${tpNid}/mri/orig/001.mgz)
-      set cmd = ($cmd ${rawavg})
-      echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
-      if($RunIt) $fs_time $cmd |& tee -a $LF
-      if($status) goto error_exit;
-      goto motioncor_post_process
-    endif
-
-    # if ltas and iscales exist in cross, copy them over
-    set CrossLtas = `ls ${SUBJECTS_DIR}/${tpNid}/mri/orig/[0-9][0-9][0-9].lta`;
-    set CrossIscales = `ls ${SUBJECTS_DIR}/${tpNid}/mri/orig/[0-9][0-9][0-9]-iscale.txt`;
-    if ( $#CrossLtas > 0 ) then
-      # check if one lta for each mgz:
-      # here we could better check if really each 00?.mgz has its own 00?.lta in future
-      if ( $#CrossList != $#CrossLtas ) then
-        echo "ERROR: Orig 00?.mgz runs and number of 00?.lta files must agree in" \
-         |& tee -a $LF
-        echo "${SUBJECTS_DIR}/${tpNid}/mri/orig/" \
-         |& tee -a $LF
-        goto error_exit;
-      endif
-      #copy ltas:
-      cd $subjdir/mri
-      set cmd = (cp -vf ${CrossLtas} orig/)
-      echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
-      if($RunIt) $fs_time $cmd |& tee -a $LF
-      if($status) goto error_exit;
-      #copy iscales if available:
-      if ($#CrossIscales > 0) then
-        # here we could better check if really each 00?.mgz has its own iscale file in future
-        if ( $#CrossList != $#CrossIscales ) then
-          echo "ERROR: Orig 00?.mgz runs and number of 00?-iscale.txt files must agree in" \
-            |& tee -a $LF
-          echo "${SUBJECTS_DIR}/${tpNid}/mri/orig/" \
-            |& tee -a $LF
-          goto error_exit;
-        endif
-        cd $subjdir/mri/
-        set cmd = (cp -vf ${CrossIscales} orig/)
-        echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
-        if($RunIt) $fs_time $cmd |& tee -a $LF
-        if($status) goto error_exit;
-      endif
-    else # Here $#CrossLtas==0 && $#CrossList>1:
-      # else the ltas don't exist (maybe because 5.0 or fsl was used,
-      # they are created by 5.1+ in cross sectional stream)
-      # if more than one input, re-receate the ltas:
-      # set output names for ltas and iscales in long dir
-      set LongLtas = ""
-      set LongIscales = ""
-      foreach nthid ($CrossList)
-        set nthname=`basename $nthid .mgz`
-        set nthdir=$subjdir/mri/orig
-        set nthlta=${nthdir}/${nthname}.lta
-        set LongLtas=($LongLtas $nthlta)
-        set LongIscales=($LongIscales $nthdir/${nthname}-iscale.txt)
-      end
-      # perform motion correction again to obtain the ltas (but in long dir, don't touch cross):
-      # the output rawavg in long will be ignored and not used for anything
-      # except maybe debugging, we only need the ltas and iscales!
-      set cmd = (mri_robust_template)
-      set cmd = ($cmd --mov ${CrossList})
-      set cmd = ($cmd --average 1)
-      set cmd = ($cmd --template ${rawavg})
-      set cmd = ($cmd --satit)
-      set cmd = ($cmd --inittp 1)
-      set cmd = ($cmd --fixtp)
-      set cmd = ($cmd --noit)
-      set cmd = ($cmd --iscale)
-      set cmd = ($cmd --iscaleout $LongIscales)
-      set cmd = ($cmd --subsample 200)
-      set cmd = ($cmd --lta $LongLtas)
-      echo "#-----------------------------------------------"
-      $PWD |& tee -a $LF
-      echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
-      if($RunIt) then
-        $fs_time $cmd |& tee -a $LF
-        if($status) goto error_exit;
-      endif
-      # better get rid of rawavg to avoid confusion
-      # as it is not in the base/long space, but in 001.mgz space
-      set cmd = (rm -f $rawavg)
-      echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
-      if($RunIt) then
-        $fs_time $cmd |& tee -a $LF
-        if($status) goto error_exit;
-      endif
-    endif
-
-    # now we have the ltas in long (current tp : subjdir)
-    set LongLtas = `ls $subjdir/mri/orig/[0-9][0-9][0-9].lta`;
-    set LongIscales = `ls $subjdir/mri/orig/[0-9][0-9][0-9]-iscale.txt`;
-
-    # concat ltas (e.g. 002 -> 001 -> base/orig.mgz)
-    set ConcatLtas = ""
-    foreach nthlta ($LongLtas)
-      set nthname=`basename $nthlta .lta`
-      set nthdir=$subjdir/mri/orig
-      set concatlta=${nthdir}/${nthname}-long.lta
-      set ConcatLtas=($ConcatLtas $nthdir/${nthname}-long.lta)
-      set cmd = (mri_concatenate_lta $nthlta $CrossToLongRegFile $concatlta)
-      echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
-      if($RunIt) $fs_time $cmd |& tee -a $LF
-      if($status) goto error_exit;
-    end
-
-    # use mri_robust_template just to create the average in base orig space:
-    set cmd = (mri_robust_template)
-    set cmd = ($cmd --mov ${CrossList})
-    set cmd = ($cmd --average 1)
-    set cmd = ($cmd --ixforms ${ConcatLtas})
-    if ($#LongIscales > 0) then
-      set cmd = ($cmd --iscalein ${LongIscales})
-    endif
-    set cmd = ($cmd --noit)
-    set cmd = ($cmd --template ${rawavg})
-    echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
+  if($longitudinal) then
+    set cmd = (longmc -long $tpNid $longbaseid)
+    if($DoConf2Hires) set cmd = ($cmd -conf2hires)
+    set xopts = `fsr-getxopts longmc $XOptsFile`;
+    set cmd = ($cmd $xopts)
     if($RunIt) then
       $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
+      echo $cmd > $touchdir/longmc.touch
     endif
-
-    # make sure orig is uchar:
-    set cmd = (mri_convert -odt uchar ${rawavg} ${origvol})
-    echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
-    if($RunIt) then
-      $fs_time $cmd |& tee -a $LF
-      if($status) goto error_exit;
-    endif
-
     goto motioncor_post_process
-  endif # Longitudinal processing.
+  endif 
 
   # base processing (we do not need to do anything,
   #   as orig should be there, rawavg is not there, due to difficulties of
   #   averaging different image geometries across time)
-  if ($DoCreateBaseSubj) then
+  if($DoCreateBaseSubj) then
     goto motioncor_post_process
   endif
 
@@ -4329,11 +4184,30 @@ if($DoCortParc) then
   endif
 endif
 
+if($DoConf2Hires) then
+  # This places the surfaces on the highres T1 (and T2)
+  set cmd = (conf2hires --threads $OMP_NUM_THREADS)
+  if($DoT2pial == 0)    set cmd = ($cmd --no-T2)
+  if($DoT2pial == 1)    set cmd = ($cmd --T2)
+  if($DoFLAIRpial == 1) set cmd = ($cmd --FLAIR)
+  if($longitudinal) then
+    set cmd = ($cmd --longitudinal $tpNid $longbaseid)
+  else
+    set cmd = ($cmd --s $subjid)
+  endif
+  if($UseCubic == 1) set cmd = ($cmd --cubic)
+  if($UseCubic == 0) set cmd = ($cmd --trilin)
+  echo $cmd | tee -a $LF
+  if($RunIt) $fs_time $cmd |& tee -a $LF
+  if($status) goto error_exit;
+  echo $cmd > $touchdir/conf2hires
+endif
+
 #----------------                    -------------------#
 #---------------- Make Pial Surfaces -------------------#
 ##---------------       -pial        -------------------#
 #----------------                    -------------------#
-if($DoPialSurfs) then
+if($DoPialSurfs && ! $DoConf2Hires) then
   set CMDFS = () # see earlier notes on -parallel implementation
   foreach hemi ($hemilist)
     echo "#--------------------------------------------" \
@@ -4404,7 +4278,7 @@ endif
 ##---------------     -T2pial  and  -FLAIRpial        ----------------#
 #----------------                                     ----------------#
 # note: the registration portion requires existence of both surfaces
-if($DoT2pial || $DoFLAIRpial) then
+if(($DoT2pial || $DoFLAIRpial) && ! $DoConf2Hires) then
   echo "#--------------------------------------------" \
     |& tee -a $LF |& tee -a $CF
   echo "#@# Refine Pial Surfs w/ T2/FLAIR `date`" \
@@ -7460,6 +7334,20 @@ while( $#argv != 0 )
       # means aseg.mgz can be created with hi-res data).
       breaksw
 
+    case "-conf2hires":
+      set DoConf2Hires = 1;
+      set DoSurfVolume = 1;
+      set HiRes = 0;
+      set ConformMin = 0;
+      set UseCubic = 0; # The conformed should be generated with trilin interp
+      set DoPialSurfs = 0; # will be done in conf2hires
+      which conf2hires >& /dev/null
+      if($status) then
+        echo "ERROR: cannot find conf2hires"
+        exit 1;
+      endif
+      breaksw
+
     case "-use-aseg":
       set UseAseg = 1;
       breaksw
@@ -7835,6 +7723,29 @@ check_params:
     if($TH3Flag)   set TH3Opt = "-th3"
     if(! $TH3Flag) set TH3Opt = "-no-th3"
 
+    if($DoConf2Hires) then
+      set DoPialSurfs = 0;
+      if($HiRes) then
+        echo "ERROR: cannot use -hires with -conf2hires"
+        exit 1;
+      endif
+      if($ConformMin) then
+        echo "ERROR: cannot use -cm with -conf2hires"
+        exit 1;
+      endif
+      if($DoCreateBaseSubj) then
+        echo "ERROR: do not use -conf2hires with -base (it is unneeded)"
+        exit 1;
+      endif
+    endif
+
+    set fname = $subjdir/scripts/DoConf2Hires
+    if(-e $fname && ! $DoConf2Hires && ($DoPialSurfs || $DoT2pial)) then
+      echo "ERROR: previous calls to recon-all included -conf2hires but this one does not."
+      echo "If you want to run without conf2hires, delete file $fname"
+      exit 1;
+    endif
+
     #------------ Longitudinal ---------------#
     if($longitudinal) then
 
@@ -8123,6 +8034,10 @@ check_params:
     set GlobXOptsFile = ()
   endif
 
+  if($DoConf2Hires) then
+    touch $subjdir/scripts/DoConf2Hires
+  endif
+
   if($#NotifyFile != 0) then
     rm -f $NotifyFile;
     set tmpdir = `dirname $NotifyFile`;
@@ -8162,7 +8077,7 @@ check_params:
      ! $DoMakefile && ! $DoParallel && ! $DoRelabelHypos && ! $DoCurvHK && \
      ! $DoSurfVolume && ! $DoASegMerge && ! $DoCCSeg && ! $DoCurvStats && ! $DoLabelV1 && \
      ! $DoCreateBaseSubj && ! $DoBaLabels && ! $DoShowEdits && \
-     ! $DoLabelExvivoEC && ! $DoPialSurfs && \
+     ! $DoLabelExvivoEC && ! $DoPialSurfs && ! $DoConf2Hires && \
      ! $DoSubfields  && \
      ! $DoPctSurfCon && ! $DoT2pial && ! $DoFLAIRpial && \
      ! $DoConvertT2Input && ! $DoConvertFlairInput && ! $DoSuperClean &&\
