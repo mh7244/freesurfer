@@ -61,9 +61,12 @@ protected slots:
   void OnEraseRangeChanged(const QString& strg);
   void OnEraseExcludeRangeChanged(const QString& strg);
 
-  void OnButtonGeoClear();
-  void OnButtonGeoGo();
-  void OnColorPickerGeo(const QColor& color);
+  void OnButtonGeoSegClear();
+  void OnButtonGeoSegGo();
+  void OnButtonGeoSegClearFilling();
+  void OnButtonGeoSegApply();
+  void OnColorPickerGeoSeg(const QColor& color);
+  void OnSliderGeoOpacity(int nVal);
 
 protected:
   virtual void showEvent(QShowEvent *);

@@ -9,10 +9,10 @@
 #include <string>
 #include "colortab.h"
 #include "fsenv.h"
-extern "C" 
-{
+ 
+
 	#include "mrisurf.h"
-}
+
 
 #include "mrisurf.h"
 #include "itkVTKPolyDataWriter.h"
@@ -26,7 +26,7 @@ int main(int narg, char*  arg[])
 		typedef itk::Mesh< CoordType, Dimension > MeshType;
 		typedef MeshType::PointsContainer PointsContainer;
 		typedef MeshType::PointType PointType;
-		typedef MeshType::PointIdentifier PointIdentifier;
+		//typedef MeshType::PointIdentifier PointIdentifier;
 		typedef MeshType::CellType CellType;
 		typedef itk::TriangleCell< CellType > TriangleType;
 

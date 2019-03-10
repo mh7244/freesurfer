@@ -31,11 +31,11 @@
 #include <QString>
 #include <QList>
 
-extern "C"
-{
+
+
 #include "colortab.h"
 #include "nifti1.h"
-}
+
 
 class vtkImageReslice;
 class vtkImageMapToColors;
@@ -61,6 +61,7 @@ class SurfaceRegionGroups;
 class LayerMRIWorkerThread;
 class LayerSurface;
 class LayerROI;
+class GeoSWorker;
 
 #ifndef IntList
 typedef QList<int> IntList;
@@ -199,8 +200,6 @@ public:
 
   bool FloodFillByContour2D( double* ras, Contour2D* c2d );
 
-  virtual void SetModified();
-
   bool SaveContourToFile(const QString& fn);
 
   SurfaceRegion* CreateNewSurfaceRegion( double* pt );
@@ -322,7 +321,9 @@ public:
   
   bool IsObscuring();
 
-  bool GEOSSegmentation(LayerROI* inside, LayerROI* outside, double lambda, int wsize, double max_dist, LayerMRI* mask);
+  bool GeodesicSegmentation(LayerMRI* seeds, double lambda, int wsize, double max_dist, LayerMRI* mask);
+
+  void GeodesicSegmentationApply(LayerMRI* filled);
 
   void GetVolumeInfo(int* dim, double* voxel_size);
 
@@ -336,6 +337,7 @@ public:
   QVariantMap GetTimeSeriesInfo();
   
 public slots:
+  virtual void SetModified();
   void SetActiveFrame( int nFrame );
   void SetActiveFrameOneBase( int nFrame )
   {
@@ -356,6 +358,7 @@ Q_SIGNALS:
   void IsoSurfaceUpdated();
   void LabelStatsReady();
   void CorrelationSurfaceChanged(LayerSurface*);
+  void GeodesicSegmentationApplied();
 
 protected slots:
   void UpdateDisplayMode();
@@ -480,6 +483,8 @@ private:
   double      m_dMaskThreshold;
 
   nifti_1_header    m_niftiHeader;
+
+  GeoSWorker* m_geos;
 };
 
 

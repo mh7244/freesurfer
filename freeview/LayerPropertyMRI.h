@@ -35,10 +35,10 @@
 #include <QVariantMap>
 #include <QColor>
 
-extern "C"
-{
+
+
 #include "colortab.h"
-}
+
 
 class vtkFreesurferLookupTable;
 class vtkRGBAColorTransferFunction;
@@ -450,6 +450,8 @@ public slots:
   void SetVectorSkip(int nSkip);
 
   void UpdateLUTTable();
+
+  void SetCustomColors(const QMap<int, QColor>& colors);
 
 signals:
   void ColorMapChanged();

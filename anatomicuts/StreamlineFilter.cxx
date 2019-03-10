@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 	typedef MeshType::CellType        CellType;
 	typedef itk::PolylineCell<CellType>                      PolylineCellType;
 	typedef VTKPolyDataToPolylineMeshFilter<MeshType> MeshConverterType;
-	typedef MeshType::CellsContainer::ConstIterator CellIteratorType;
+	// typedef MeshType::CellsContainer::ConstIterator CellIteratorType;
 	typedef MeshType::CellAutoPointer CellAutoPointer;
 	typedef itk::Image<float, 3> ImageType;
 	typedef PolylineMeshToVTKPolyDataFilter<MeshType> VTKConverterType;
@@ -181,7 +181,11 @@ int main(int argc, char *argv[])
 	{
 		vtkPolyDataWriter *writerFixed = vtkPolyDataWriter::New();
 		writerFixed->SetFileName ( meshName2);
+#if VTK_MAJOR_VERSION > 5
+		writerFixed->SetInputData(vtkConverter->GetOutputPolyData());
+#else
 		writerFixed->SetInput(vtkConverter->GetOutputPolyData());
+#endif
 		writerFixed->SetFileTypeToBinary();
 		writerFixed->Update();
 	}

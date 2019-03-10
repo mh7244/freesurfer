@@ -1,4 +1,4 @@
-QT       += core gui script
+QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -78,8 +78,6 @@ SOURCES += \
     PanelSurface.cpp \
     PanelVolume.cpp \
     qtcolorpicker.cpp \
-    QVTKWidget.cxx \
-    QVTKPaintEngine.cxx \
     Region2D.cpp \
     Region2DLine.cpp \
     Region2DPolyline.cpp \
@@ -172,7 +170,12 @@ SOURCES += \
     SurfacePath.cpp \
     Interactor3DPathEdit.cpp \
     DialogCustomFill.cpp \
-    DialogSurfaceLabelOperations.cpp
+    DialogSurfaceLabelOperations.cpp \
+    geos/GeodesicMatting.cpp \
+    geos/kde.cpp \
+    GeoSWorker.cpp \
+    QVTKWidget/QVTKWidget.cxx \
+    QVTKWidget/QVTKPaintEngine.cxx
 
 HEADERS  += \
     Annotation2D.h \
@@ -245,7 +248,6 @@ HEADERS  += \
     PanelSurface.h \
     PanelVolume.h \
     qtcolorpicker.h \
-    QVTKWidget.h \
     Region2D.h \
     Region2DLine.h \
     Region2DPolyline.h \
@@ -332,7 +334,12 @@ HEADERS  += \
     SurfacePath.h \
     Interactor3DPathEdit.h \
     DialogCustomFill.h \
-    DialogSurfaceLabelOperations.h
+    DialogSurfaceLabelOperations.h \
+    geos/GeodesicMatting.h \
+    geos/kde.h \
+    GeoSWorker.h \
+    QVTKWidget/QVTKWidget.h
+    QVTKWidget/QVTKPaintEngine.h
 
 FORMS    += MainWindow.ui \
     PanelVolume.ui \
@@ -398,7 +405,9 @@ include ($$PWD/json/qjson.pri)
 QMAKE_CXXFLAGS += -DUNICODE -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES \
                    -DDEVELOPMENT -DHAVE_OPENMP
 
-QMAKE_CXXFLAGS_WARN_ON += -Wno-deprecated -Wno-write-strings #-Wno-reorder
+if(SUPPRESS_WARNINGS) {
+  QMAKE_CXXFLAGS_WARN_ON += -Wno-deprecated -Wno-write-strings #-Wno-reorder
+}
 
 # set this to your local dev directory
 FREESURFER_DEV_DIR = /homes/5/rpwang/freesurfer_dev

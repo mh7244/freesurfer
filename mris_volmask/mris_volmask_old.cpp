@@ -47,8 +47,8 @@
 #include "cmd_line_interface.h"
 
 // FS
-extern "C"
-{
+
+
 #include "fsenv.h"
 #include "mrisurf.h"
 #include "mri.h"
@@ -58,7 +58,7 @@ extern "C"
 #include "diag.h"
 #include "macros.h"
 #include "gca.h"
-};
+;
 const char *Progname;
 
 // static function declarations
@@ -571,7 +571,6 @@ LoadInputFiles(const IoParams& params,
                MRIS*& surfRightPial) throw(IoError)
 {
   // determine the mode of the application and infer the input file names
-  // use the BOOST filesystem library to resolve paths (system-independent)
 
   // declare path objects
   std::string pathSurfLeftWhite,
@@ -691,7 +690,11 @@ ComputeSurfaceDistanceFunction(MRIS* mris,
 
   // compute the unsigned distance
   vtkImplicitModeller* implicit = vtkImplicitModeller::New();
+#if VTK_MAJOR_VERSION > 5
+  implicit->SetInputData(mesh);
+#else
   implicit->SetInput(mesh);
+#endif
   double bounds[6] =
     { 0, (double)dims[0]-1.0, 0.0, (double)dims[1]-1.0, 0.0, (double)dims[2]-1.0 };
   implicit->SetModelBounds(bounds);
