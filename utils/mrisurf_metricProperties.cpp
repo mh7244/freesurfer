@@ -7927,7 +7927,8 @@ double MRIStotalVariation(MRIS *mris)
 #if SPHERE_INTERSECTION
 int containsAnotherVertexOnSphere(MRIS *mris, int vno0, int vno1, int vno2, int mode)
 {
-  int i, n, nvertices, vertices[1000];
+  const unsigned bufsize = 10000;
+  int i, n, nvertices, vertices[bufsize];
   double sign[3], normal[3][3], orgn[3][3], tangent[3], test;
 
   // first compute the 3 normals, 3 original points and associated constants
@@ -7965,7 +7966,7 @@ int containsAnotherVertexOnSphere(MRIS *mris, int vno0, int vno1, int vno2, int 
   }
   
   // Next, list all the neighboring vertices
-  memset(vertices, 0, 1000 * sizeof(int));
+  memset(vertices, 0, bufsize * sizeof(int));
   for (nvertices = 0, i = 0; i < 3; i++) {
     int v0,v1,v2;
     switch (i) {
@@ -7997,6 +7998,10 @@ int containsAnotherVertexOnSphere(MRIS *mris, int vno0, int vno1, int vno2, int 
       }
       if (mode && vn->fixedval == 0) {
         continue;  // experimental
+      }
+      if (nvertices == bufsize) {
+        fprintf(stderr, "%s:%d ERROR: exceeded buffer size\n", __FILE__, __LINE__);
+        exit(1);
       }
       // add vn in the list
       vertices[nvertices++] = vt->v[n];
