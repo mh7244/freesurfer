@@ -435,14 +435,12 @@ static int mrisRemoveNeighborGradientComponent(MRI_SURFACE *mris, int vno)
 
 static int mrisLimitGradientDistance(MRI_SURFACE *mris, MHT *mht, int vno)
 {
-  VERTEX *v;
-
-  v = &mris->vertices[vno];
+  VERTEX *v = &mris->vertices[vno];
 
   mrisRemoveNeighborGradientComponent(mris, vno);
-  if (MHTisVectorFilled(mht, mris, vno, v->odx, v->ody, v->odz)) {
+  if (MHTisVectorFilled(mht, vno, v->odx, v->ody, v->odz)) {
     mrisRemoveNormalGradientComponent(mris, vno);
-    if (MHTisVectorFilled(mht, mris, vno, v->odx, v->ody, v->odz)) {
+    if (MHTisVectorFilled(mht, vno, v->odx, v->ody, v->odz)) {
       v->odx = v->ody = v->odz = 0.0;
       return (NO_ERROR);
     }
@@ -464,7 +462,7 @@ static double mrisAsynchronousTimeStepNew(MRI_SURFACE *mris, float momentum, flo
     int const vno =
       (direction < 0) ? (mris->nvertices - i - 1) : (i);
       
-    VERTEX_TOPOLOGY const * const vt = &mris->vertices_topology[vno];
+    //VERTEX_TOPOLOGY const * const vt = &mris->vertices_topology[vno];
     VERTEX                * const v  = &mris->vertices         [vno];
     
     if (v->ripflag) continue;
@@ -486,7 +484,7 @@ static double mrisAsynchronousTimeStepNew(MRI_SURFACE *mris, float momentum, flo
     /* erase the faces this vertex is part of */
 
     if (mht) {
-      MHTremoveAllFaces(mht, mris, vt);
+      MHTremoveAllFaces(mht, mris, vno);
       mrisLimitGradientDistance(mris, mht, vno);
     }
     
@@ -495,7 +493,7 @@ static double mrisAsynchronousTimeStepNew(MRI_SURFACE *mris, float momentum, flo
       v->y + v->ody,
       v->z + v->odz);
     
-    if (mht) MHTaddAllFaces(mht, mris, vt);
+    if (mht) MHTaddAllFaces(mht, mris, vno);
   }
 
   direction *= -1;
@@ -1246,6 +1244,37 @@ int MRISfwhm2nitersSubj(double fwhm, char *subject, char *hemi, char *surfname)
 
   return (niters);
 }
+
+/*!
+  \fn MRI *MRISfwhmFromAR1Map(MRIS *surf, MRI *mask, MRI *ar1map)
+  \brief Computes FWHM for each vertex
+ */
+MRI *MRISfwhmFromAR1Map(MRIS *surf, MRI *mask, MRI *ar1map)
+{
+  double ar1, fwhm, gstd, InterVertexDistAvg;
+  MRIScomputeMetricProperties(surf);
+
+  InterVertexDistAvg = surf->avg_vertex_dist;
+  if (surf->group_avg_surface_area > 0)
+    InterVertexDistAvg *= sqrt(surf->group_avg_surface_area / surf->total_area);
+
+  MRI *fwhmmap = MRIalloc(surf->nvertices,1,1,MRI_FLOAT);
+  MRIcopyHeader(ar1map,fwhmmap);
+  MRIcopyPulseParameters(ar1map,fwhmmap);
+
+  int n;
+  for(n=0; n < surf->nvertices; n++){
+    if(mask && MRIgetVoxVal(mask,n,0,0,0)<0.5) continue;
+    ar1 = MRIgetVoxVal(ar1map,n,0,0,0);
+    // Cant just call MRISfwhmFromAR1() because it runs compute metric properties
+    if(ar1 <= 0.0) continue;
+    gstd = InterVertexDistAvg / sqrt(-4 * log(ar1));
+    fwhm = gstd * sqrt(log(256.0));
+    MRIsetVoxVal(fwhmmap,n,0,0,0,fwhm);
+  }
+  return(fwhmmap);
+}
+
 
 /*----------------------------------------------------------------------
   MRISfwhm() - estimates fwhm from global ar1 mean

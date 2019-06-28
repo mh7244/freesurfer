@@ -364,6 +364,8 @@ public:
 
   bool LoadParameterization(const QString& filename);
 
+  bool LoadCoordsFromParameterization(const QString &filename);
+
   void SetSphereFileName(const QString& fn)
   {
     m_sSphereFilename = fn;
@@ -440,6 +442,8 @@ public slots:
   {
     return m_marks;
   }
+
+  vtkActor* GetMainActor();
 
 Q_SIGNALS:
   void SurfaceAnnotationAdded( SurfaceAnnotation* );
