@@ -71,18 +71,14 @@ end
 vsz = size(mri.vol);
 nvsz = length(vsz);
 if(nvsz ~= 4) vsz = [vsz ones(1,4-nvsz)]; end
-if(~isfield(mri,'volsize'))
-  mri.volsize = [vsz(1) vsz(2) vsz(3)];
-end
 if(~isfield(mri,'nframes'))  mri.nframes = vsz(4); end
 if(~isfield(mri,'tr')) mri.tr = 0; end
 if(~isfield(mri,'te')) mri.te = 0; end
 if(~isfield(mri,'ti')) mri.ti = 0; end
 if(~isfield(mri,'flip_angle')) mri.flip_angle = 0;end
 if(~isfield(mri,'vox2ras0'))  mri.vox2ras0 = eye(4);end
-if(~isfield(mri,'volres'))
-    mri.volres = sqrt(sum(mri.vox2ras0(1:3,1:3).^2));
-end
+mri.volsize = [vsz(1) vsz(2) vsz(3)];
+mri.volres = sqrt(sum(mri.vox2ras0(1:3,1:3).^2));
   
 [fspec fstem fmt] = MRIfspec(fstring,0); % 0 = turn off checkdisk
 if(isempty(fspec))
