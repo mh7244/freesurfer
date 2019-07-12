@@ -104,12 +104,7 @@ switch(fmt)
   bmri.voldim = [size(mri.vol,1) size(mri.vol,2) size(mri.vol,3)];
   bmri.nframes = size(mri.vol,4);
   bmri.T = mri.vox2ras0;
-  % Recompute voxel size based on vox2ras, to assure that
-  % things only depend upon vox2ras0.
-  xsize = sqrt(sum(mri.vox2ras0(:,1).^2)); 
-  ysize = sqrt(sum(mri.vox2ras0(:,2).^2));
-  zsize = sqrt(sum(mri.vox2ras0(:,3).^2));
-  bmri.volres = [xsize ysize zsize];
+  bmri.volres = mri.volres;
   outbext = 'bfloat';
   if(isfield(mri,'outbext'))
     if(strcmp(mri.outbext,'bshort')) outbext = 'bshort'; end
