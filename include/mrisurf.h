@@ -429,6 +429,7 @@ typedef struct INTEGRATION_PARMS
   MRI          *mri_template ;
   int          which_surface ;
   float        trinarize_thresh;   // for trinarizing curvature in registration
+  int          nonmax ;  // apply nonmax suppression in reg
   int          smooth_intersections ;  // run soap bubble smoothing during surface positioning
   int          uncompress ;            // run code to remove compressions in tessellation
   double       min_dist ;
@@ -536,11 +537,8 @@ int MRISfindClosestWhiteVertex(MRI_SURFACE *mris, float x, float y,
 int MRISfindClosestVertex(MRI_SURFACE *mris,
                           float x, float y, float z,
                           float *dmin, int which_vertices);
-double MRIScomputeSSE(MRI_SURFACE *mris, INTEGRATION_PARMS *parms) ;
-double MRIScomputeSSEExternal(MRI_SURFACE *mris, INTEGRATION_PARMS *parms,
-                              double *ext_sse) ;
-double       MRIScomputeCorrelationError(MRI_SURFACE *mris,
-    MRI_SP *mrisp_template, int fno) ;
+                              
+double       MRIScomputeCorrelationError(MRI_SURFACE *mris, MRI_SP *mrisp_template, int fno) ;
 int          MRISallocExtraGradients(MRI_SURFACE *mris) ;
 MRI_SURFACE  *MRISread(const char *fname) ;
 MRI_SURFACE  *MRISreadOverAlloc(const char *fname, double nVFMultiplier) ;
@@ -872,18 +870,6 @@ double       MRISmomentumTimeStep(MRI_SURFACE *mris,
                                   float n_averages) ;
                                   
 int          MRISapplyGradient(MRI_SURFACE *mris, double dt) ;
-
-typedef struct MRIScomputeSSE_asThoughGradientApplied_ctx MRIScomputeSSE_asThoughGradientApplied_ctx;
-void   MRIScomputeSSE_asThoughGradientApplied_ctx_free(MRIScomputeSSE_asThoughGradientApplied_ctx** ctx);
-
-double       MRIScomputeSSE_asThoughGradientApplied(
-                MRIS*              mris, 
-                double             delta_t, 
-                INTEGRATION_PARMS* parms,
-                MRIScomputeSSE_asThoughGradientApplied_ctx ** ctx);     
-                        // ctx  should be NULL on the first call,
-                        //      should be passed to MRIScomputeSSE_asThoughGradientApplied_ctx_free
-                        //          before any changes to the MRIS happen
 
 int          MRIScomputeNormals(MRI_SURFACE *mris) ;
 int          MRIScomputeSurfaceNormals(MRI_SURFACE *mris,
@@ -2130,7 +2116,7 @@ void mrisRemoveEdge(MRIS *mris, int vno1, int vno2);
 
 // Neighbourhoods
 //
-#define MAX_NEIGHBORS (400)
+#define MAX_NEIGHBORS (1024)
 void mrisVertexReplacingNeighbors(MRIS * mris, int vno, int vnum);
 void mrisForgetNeighborhoods     (MRIS * mris);
 
@@ -2407,6 +2393,7 @@ struct face_topology_type_ {    // not used much yet
 
 // Static function implementations
 //
+#if 0
 static CONST_EXCEPT_MRISURF_TOPOLOGY short* pVERTEXvnum(VERTEX_TOPOLOGY CONST_EXCEPT_MRISURF_TOPOLOGY * v, int i) {
   switch (i) {
   case 1: return &v->vnum;
@@ -2415,6 +2402,14 @@ static CONST_EXCEPT_MRISURF_TOPOLOGY short* pVERTEXvnum(VERTEX_TOPOLOGY CONST_EX
   default: cheapAssert(false); return NULL;
   }    
 }
+#endif
+
+short        modVnum  (MRIS const *mris, int vno, short add, bool clearFirst = false);
+static short setVnum  (MRIS const *mris, int vno, short to)     { return modVnum(mris,vno, to,true );     }
+static short clearVnum(MRIS const *mris, int vno)               { return modVnum(mris,vno,  0,true );     }
+static short vnumAdd  (MRIS const *mris, int vno, short add=+1) { return modVnum(mris,vno,add,false)-add; }
+static short addVnum  (MRIS const *mris, int vno, short add=-1) { return modVnum(mris,vno,add,false);     }
+
 static short VERTEXvnum(VERTEX_TOPOLOGY const * v, int i) {
   switch (i) {
   case 1: return v->vnum;

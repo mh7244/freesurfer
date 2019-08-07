@@ -41,7 +41,7 @@
 #include <QFile>
 #include <QSurfaceFormat>
 
-#if VTK_MAJOR_VERSION > 5
+#if VTK_MAJOR_VERSION > 7
 #include <QVTKOpenGLWidget.h>
 #endif
 
@@ -154,6 +154,7 @@ int main(int argc, char *argv[])
     "':opacity=value' Set the opacity of the volume layer. value ranges from 0 to 1.\n\n"
     "':mask=volume_name' Use the given volume to as mask for display. The mask volume must be loaded first.\n\n"
     "':isosurface=low_threshold,high_threshold' Set 3D display as isosurface. High_threshold is optional. If no threshold or simply 'on' is given, threshold will be either automatically determined or retrieved from the save previously settings.\n\n"
+    "':isosurface_output=filename' Save isosurface to file. Extension can be .vtk or .stl.\n\n"
     "':surface_region=file' Load isosurface region(s) from the given file. isosurface display will automatically be turned on.\n\n"
     "':name=display_name' Set the display name of the volume.\n\n"
     "':lock=lock_status' Lock the volume layer so it will not be moved in the layer stack. Status can be '1' or 'true'.\n\n"
@@ -181,6 +182,7 @@ int main(int argc, char *argv[])
     "':overlay_method=method_name' Set overlay method. Valid names are 'linear', 'linearopaque' and 'piecewise'.\n\n"
     "':overlay_color=colorscale,settings' Set overlay color setttings. Valid names are 'colorwheel', 'truncate' and 'inverse'. Use comma to apply more than one.\n\n"
     "':overlay_threshold=low,(mid,)high(,percentile)' Set overlay threshold values, separated by comma. When overlay method is linear or linearopaque, only 2 numbers (low and high) are needed. When method is piecewise, 3 numbers are needed. If last element is 'percentile', use the give numbers as percentile.\n\n"
+    "':overlay_mask=filename(,invert)' Use given label file as mask for overlay. If invert is specified, use the inverted mask.\n\n"
     "':overlay_frame=frame_number' Set active frame of multi-frame overlay.\n\n"
     "':overlay_smooth=smooth_steps' Set smooth steps for overlay.\n\n"
     "':overlay_zorder=number' Set z-order for rendering overlay.\n\n"
@@ -284,7 +286,7 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-#if VTK_MAJOR_VERSION > 5
+#if VTK_MAJOR_VERSION > 7
   QSurfaceFormat::setDefaultFormat(QVTKOpenGLWidget::defaultFormat());
 #endif
 

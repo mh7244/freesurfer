@@ -3999,11 +3999,10 @@ bool LayerMRI::GetLayerLabelCenter(double val, double *pos_out)
 bool LayerMRI::IsWindowAdjustable()
 {
   return IsVisible() && GetProperty()->GetOpacity() > 0 && GetProperty()->GetColorMap() != LayerPropertyMRI::LUT &&
-      GetProperty()->GetColorMap() != LayerPropertyMRI::DirectionCoded;
+      GetProperty()->GetColorMap() != LayerPropertyMRI::DirectionCoded && !GetProperty()->GetDisplayVector();
 }
 
 bool LayerMRI::IsObscuring()
-
 {
   return IsVisible() && GetProperty()->GetOpacity() == 1 && GetProperty()->GetColorMap() == LayerPropertyMRI::Grayscale;
 }
@@ -4167,4 +4166,25 @@ QVariantMap LayerMRI::GetTimeSeriesInfo()
 QString LayerMRI::GetGeoSegErrorMessage()
 {
   return m_geos?m_geos->GetErrorMessage():"";
+}
+
+bool LayerMRI::ExportLabelStats(const QString &fn)
+{
+    QFile file(fn);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+      return false;
+
+    QTextStream out(&file);
+    out << "Label,Count,Volume (mm3)\n";
+    double* vs = m_imageData->GetSpacing();
+    QList<int> labels = m_nAvailableLabels;
+    qSort(labels);
+    for (int i = 0; i < labels.size(); i++)
+    {
+        QVector<double> list = GetVoxelList(labels[i]);
+        if (!list.isEmpty())
+            out << QString("%1,%2,%3\n").arg(labels[i])
+                   .arg(list.size()/3).arg(list.size()/3*vs[0]*vs[1]*vs[2]);
+    }
+    return true;
 }

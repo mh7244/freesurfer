@@ -44,6 +44,8 @@ void mrismp_ComputeFaceRelevantAngleAndArea(MRIS_MP* mris, INTEGRATION_PARMS *pa
 int mrisAverageSignedGradients             (MRIS*    mris, int num_avgs);
 int mrisComputePositioningGradients        (MRIS*    mris, INTEGRATION_PARMS *parms);
 
+double MRIScomputeSSE        (MRI_SURFACE *mris, INTEGRATION_PARMS *parms);
+double MRIScomputeSSEExternal(MRI_SURFACE *mris, INTEGRATION_PARMS *parms, double *ext_sse);
 
 // MEF support
 //
@@ -68,54 +70,56 @@ int mrisComputeIntensityTerm_mef                (MRI_SURFACE *mris,
                                                                     INTEGRATION_PARMS *parms);
 
 // energy measurements
+//      the selector parameter lets the caller compute the term on the specified vertex or face rather than summing all of them
+//      mostly it is NYI
 //
 #define LIST_OF_PER_VERTEX_SSETERMS_NYI \
-    ELT(AshburnerTriangleEnergy       , (MRIS_PARAMETER_COMMA double l_ashburner_triangle, INTEGRATION_PARMS *parms                         ), (l_ashburner_triangle,parms)) SEP \
-    ELT(LaplacianEnergy               , (MRIS_PARAMETER                                                                                     ), ()) SEP \
-    ELT(NonlinearSpringEnergy         , (MRIS_PARAMETER_COMMA                              INTEGRATION_PARMS *parms                         ), (parms)) SEP \
-    ELT(RepulsiveEnergy               , (MRIS_PARAMETER_COMMA double l_repulse, MHT *mht_v_current, MHT *mht_f_current                      ), (l_repulse, mht_v_current, mht_f_current)) SEP \
-    ELT(SurfaceRepulsionEnergy        , (MRIS_PARAMETER_COMMA double l_repulse, MHT *mht                                                    ), (l_repulse, mht)) SEP \
-    ELT(TangentialSpringEnergy        , (MRIS_PARAMETER                                                                                     ), ())     \
+    ELT(AshburnerTriangleEnergy       , (MRIS_PARAMETER_COMMA double l_ashburner_triangle, INTEGRATION_PARMS *parms                         COMMA_SELECTOR), (l_ashburner_triangle,parms)) SEP \
+    ELT(LaplacianEnergy               , (MRIS_PARAMETER_COMMA                                                                               NOCOMMA_SELECTOR), ()) SEP \
+    ELT(NonlinearSpringEnergy         , (MRIS_PARAMETER_COMMA                              INTEGRATION_PARMS *parms                         COMMA_SELECTOR), (parms)) SEP \
+    ELT(RepulsiveEnergy               , (MRIS_PARAMETER_COMMA double l_repulse, MHT *mht_v_current, MHT *mht_f_current                      COMMA_SELECTOR), (l_repulse, mht_v_current, mht_f_current)) SEP \
+    ELT(SurfaceRepulsionEnergy        , (MRIS_PARAMETER_COMMA double l_repulse, MHT *mht                                                    COMMA_SELECTOR), (l_repulse, mht)) SEP \
+    ELT(TangentialSpringEnergy        , (MRIS_PARAMETER_COMMA                                                                               NOCOMMA_SELECTOR), ())     \
     // end of macro
 
 #define LIST_OF_PER_VERTEX_SSETERMS_Implemented \
-    ELT(RepulsiveRatioEnergy          , (MRIS_PARAMETER_COMMA double l_repulse                                                              ), (l_repulse)) SEP \
-    ELT(SpringEnergy                  , (MRIS_PARAMETER                                                                                     ), ()) SEP \
-    ELT(ThicknessMinimizationEnergy   , (MRIS_PARAMETER_COMMA double l_thick_min,        INTEGRATION_PARMS *parms                           ), (l_thick_min,parms)) SEP \
-    ELT(ThicknessNormalEnergy         , (MRIS_PARAMETER_COMMA double l_thick_normal,     INTEGRATION_PARMS *parms                           ), (l_thick_normal,parms)) SEP \
-    ELT(ThicknessSpringEnergy         , (MRIS_PARAMETER_COMMA double l_thick_spring,     INTEGRATION_PARMS *parms                           ), (l_thick_spring,parms)) SEP \
-    ELT(ThicknessParallelEnergy       , (MRIS_PARAMETER_COMMA double l_thick_parallel,   INTEGRATION_PARMS *parms                           ), (l_thick_parallel,parms)) SEP \
-    ELT(ThicknessSmoothnessEnergy     , (MRIS_PARAMETER_COMMA double l_tsmooth,          INTEGRATION_PARMS *parms                           ), (l_tsmooth,parms)) SEP \
+    ELT(RepulsiveRatioEnergy          , (MRIS_PARAMETER_COMMA double l_repulse                                                              COMMA_SELECTOR), (l_repulse)) SEP \
+    ELT(SpringEnergy                  , (MRIS_PARAMETER_COMMA                                                                               NOCOMMA_SELECTOR), ()) SEP \
+    ELT(ThicknessMinimizationEnergy   , (MRIS_PARAMETER_COMMA double l_thick_min,        INTEGRATION_PARMS *parms                           COMMA_SELECTOR), (l_thick_min,parms)) SEP \
+    ELT(ThicknessNormalEnergy         , (MRIS_PARAMETER_COMMA double l_thick_normal,     INTEGRATION_PARMS *parms                           COMMA_SELECTOR), (l_thick_normal,parms)) SEP \
+    ELT(ThicknessSpringEnergy         , (MRIS_PARAMETER_COMMA double l_thick_spring,     INTEGRATION_PARMS *parms                           COMMA_SELECTOR), (l_thick_spring,parms)) SEP \
+    ELT(ThicknessParallelEnergy       , (MRIS_PARAMETER_COMMA double l_thick_parallel,   INTEGRATION_PARMS *parms                           COMMA_SELECTOR), (l_thick_parallel,parms)) SEP \
+    ELT(ThicknessSmoothnessEnergy     , (MRIS_PARAMETER_COMMA double l_tsmooth,          INTEGRATION_PARMS *parms                           COMMA_SELECTOR), (l_tsmooth,parms)) SEP \
     /**/ \
-    ELT(NonlinearDistanceSSE          , (MRIS_PARAMETER                                                                                     ), ()) SEP \
-    ELT(QuadraticCurvatureSSE         , (MRIS_PARAMETER_COMMA double l_curv                                                                 ), (l_curv)) SEP \
-    ELT(HistoNegativeLikelihood       , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms                           ), (parms)) SEP \
-    ELT(NegativeLogPosterior          , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms, int *pnvox               ), (parms,pnvox)) SEP \
-    ELT(NegativeLogPosterior2D        , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms, int *pnvox               ), (parms,pnvox)) SEP \
+    ELT(NonlinearDistanceSSE          , (MRIS_PARAMETER_COMMA                                                                               NOCOMMA_SELECTOR), ()) SEP \
+    ELT(QuadraticCurvatureSSE         , (MRIS_PARAMETER_COMMA double l_curv                                                                 COMMA_SELECTOR), (l_curv)) SEP \
+    ELT(HistoNegativeLikelihood       , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms                           COMMA_SELECTOR), (parms)) SEP \
+    ELT(NegativeLogPosterior          , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms, int *pnvox               COMMA_SELECTOR), (parms,pnvox)) SEP \
+    ELT(NegativeLogPosterior2D        , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms, int *pnvox               COMMA_SELECTOR), (parms,pnvox)) SEP \
     /**/ \
-    ELT(CorrelationError              , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms, int use_stds             ), (parms,use_stds)) SEP \
-    ELT(DistanceError                 , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms                           ), (parms)) SEP \
-    ELT(DuraError                     , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms                           ), (parms)) SEP \
-    ELT(IntensityError                , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms                           ), (parms)) SEP \
-    ELT(TargetLocationError           , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms                           ), (parms)) SEP \
-    ELT(IntensityGradientError        , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms                           ), (parms)) SEP \
-    ELT(VectorCorrelationError        , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms, int use_stds             ), (parms,use_stds)) SEP \
-    ELT(ExpandwrapError               , (MRIS_PARAMETER_COMMA                            MRI *mri_brain, double l_expandwrap, double target_radius), (mri_brain,l_expandwrap,target_radius)) SEP \
-    ELT(ShrinkwrapError               , (MRIS_PARAMETER_COMMA                            MRI *mri_brain, double l_shrinkwrap                ), (mri_brain,l_shrinkwrap)) SEP \
-    ELT(SphereError                   , (MRIS_PARAMETER_COMMA double l_sphere, double r0                                                    ), (l_sphere,r0)) SEP \
-    ELT(RmsDistanceError              , (MRIS_PARAMETER                                                                                     ), ()) SEP \
+    ELT(CorrelationError              , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms, int use_stds             COMMA_SELECTOR), (parms,use_stds)) SEP \
+    ELT(DistanceError                 , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms                           COMMA_SELECTOR), (parms)) SEP \
+    ELT(DuraError                     , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms                           COMMA_SELECTOR), (parms)) SEP \
+    ELT(IntensityError                , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms                           COMMA_SELECTOR), (parms)) SEP \
+    ELT(TargetLocationError           , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms                           COMMA_SELECTOR), (parms)) SEP \
+    ELT(IntensityGradientError        , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms                           COMMA_SELECTOR), (parms)) SEP \
+    ELT(VectorCorrelationError        , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms, int use_stds             COMMA_SELECTOR), (parms,use_stds)) SEP \
+    ELT(ExpandwrapError               , (MRIS_PARAMETER_COMMA                     MRI *mri_brain, double l_expandwrap, double target_radius COMMA_SELECTOR), (mri_brain,l_expandwrap,target_radius)) SEP \
+    ELT(ShrinkwrapError               , (MRIS_PARAMETER_COMMA                            MRI *mri_brain, double l_shrinkwrap                COMMA_SELECTOR), (mri_brain,l_shrinkwrap)) SEP \
+    ELT(SphereError                   , (MRIS_PARAMETER_COMMA double l_sphere, double r0                                                    COMMA_SELECTOR), (l_sphere,r0)) SEP \
+    ELT(RmsDistanceError              , (MRIS_PARAMETER_COMMA                                                                               NOCOMMA_SELECTOR), ()) SEP \
     ELT(Error                         , (MRIS_PARAMETER_COMMA                            INTEGRATION_PARMS *parms, \
                                                                                             float *parea_rms, \
                                                                                             float *pangle_rms,\
                                                                                             float *pcurv_rms, \
                                                                                             float *pdist_rms, \
-                                                                                            float *pcorr_rms                                ), (parms,parea_rms,pangle_rms,pcurv_rms,pdist_rms,pcorr_rms))     \
+                                                                                            float *pcorr_rms                                COMMA_SELECTOR), (parms,parea_rms,pangle_rms,pcurv_rms,pdist_rms,pcorr_rms))     \
     // end of macro
 
 #define LIST_OF_PER_VERTEX_SSETERMS LIST_OF_PER_VERTEX_SSETERMS_NYI SEP LIST_OF_PER_VERTEX_SSETERMS_Implemented
 
 #define LIST_OF_PER_FACE_SSETERMS \
-    ELT(NonlinearAreaSSE              , (MRIS_PARAMETER                                                                                     ), ())     \
+    ELT(NonlinearAreaSSE              , (MRIS_PARAMETER_COMMA                                                                               NOCOMMA_SELECTOR), ())     \
     // end of macro
 
 
@@ -124,23 +128,22 @@ int mrisComputeIntensityTerm_mef                (MRI_SURFACE *mris,
 
 #define MRIS_PARAMETER          MRIS* mris
 #define MRIS_PARAMETER_COMMA    MRIS_PARAMETER,
+#define NOCOMMA_SELECTOR        int selector = -1
+#define COMMA_SELECTOR          , NOCOMMA_SELECTOR
 #define SEP 
+
 #define ELT(NAME, SIGNATURE, CALL)    double mrisCompute##NAME SIGNATURE;
 LIST_OF_SSETERMS
 #undef ELT
-#undef SEP
-#undef MRIS_PARAMETER_COMMA
-#undef MRIS_PARAMETER
-
-#define MRIS_PARAMETER          MRIS* mris
-#define MRIS_PARAMETER_COMMA    MRIS_PARAMETER,
-#define SEP 
 #define MRIS MRIS_MP
 #define ELT(NAME, SIGNATURE, CALL)    double mrismp_Compute##NAME SIGNATURE;
 LIST_OF_PER_VERTEX_SSETERMS_Implemented SEP LIST_OF_PER_FACE_SSETERMS
 #undef ELT
 #undef MRIS
+
 #undef SEP
+#undef COMMA_SELECTOR
+#undef NOCOMMA_SELECTOR
 #undef MRIS_PARAMETER_COMMA
 #undef MRIS_PARAMETER
 

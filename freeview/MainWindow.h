@@ -247,6 +247,7 @@ Q_SIGNALS:
   void NewVolumeCreated();
   void CycleOverlayRequested();
   void SupplementLayerChanged();
+  void OverlayMaskRequested(const QString& fn);
 
 public slots:
   void SetMode( int nMode );
@@ -300,6 +301,8 @@ public slots:
   {
     ClearScripts();
   }
+
+  void OnExportLabelStats();
 
 protected:
   void closeEvent   ( QCloseEvent * event );
@@ -381,6 +384,7 @@ protected:
   void CommandSetSurfaceOverlayOpacity    ( const QStringList& cmd );
   void CommandSetSurfaceOverlayFrame      ( const QStringList& cmd );
   void CommandSetSurfaceOverlaySmooth     ( const QStringList& cmd );
+  void CommandSetSurfaceOverlayMask      ( const QStringList& cmd );
   void CommandSetSurfaceOverlayCustom     ( const QStringList& cmd );
   void CommandSetSurfaceColor   ( const QStringList& cmd );
   void CommandSetSurfaceEdgeColor ( const QStringList& cmd );
@@ -509,7 +513,7 @@ protected slots:
   void OnSmoothSurface();
   void OnRemoveIntersectionsFromSurface();
   void OnShowLabelStats();
-  void OnSaveIsoSurface();
+  void OnSaveIsoSurface(const QString& fn = "");
   void OnPlot();
   void OnLineProfile();
   void OnCycleSurfaceLabel();
@@ -537,6 +541,11 @@ protected slots:
   void SetProcessing( bool bProcessing = true )
   {
     m_bProcessing = bProcessing;
+  }
+
+  void SetProcessingFinished()
+  {
+    SetProcessing(false);
   }
 
   void ReassureGeometry();
