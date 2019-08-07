@@ -5822,10 +5822,10 @@ while( $#argv != 0 )
       set subjid = `basename $subjid`; # removes trailing /
       set DoCreateBaseSubj = 1;
       set NoRandomness = 1;
+      set DoConformWidth256 = 1; # For VM.
       breaksw
     case "-base-affine":
-      set DoAffineBase = 1;
-      # don't break here, but also switch on -base:
+      set DoAffineBase = 1; # don't break here, also switch on -base:
     case "-base":
       if ( $#argv < 1) goto arg1err;
       set subjid = $argv[1]; shift;
