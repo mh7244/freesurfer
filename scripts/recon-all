@@ -1342,7 +1342,7 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
       set cmd = ($cmd --sat 4.685)
       set cmd = ($cmd --ixforms ${ltaRforms})
       set cmd = ($cmd --affine)
-      set cmd = ($cmd --template ${subjdir}/mri/nu_template.nii.gz)
+      set cmd = ($cmd --template ${subjdir}/mri/nu_template.mgz)
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
@@ -1363,16 +1363,13 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
     # Set link to LTAs to use.
     cd $subjdir/mri/transforms > /dev/null
     $PWD |& tee -a $LF
-    if ($DoAffineBase && ! $DoNonlinBase) then
-      set lta = ($ltaAforms)
-    else
-      set lta = ($ltaRforms)
-    endif
+    set lta = ($ltaRforms)
+    if ($DoAffineBase) set lta = ($ltaAforms)
     foreach i (`seq 1 $#BaseSubjsList`)
       set cmd = (ln -svf `basename $lta[$i]` `basename $ltaXforms[$i]`)
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
-      if($status) goto error_exit;t;
+      if($status) goto error_exit;
     end
 
     if (! $DoNonlinBase) then
@@ -1401,33 +1398,23 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
   # Disabled if only one TP.
   if ($DoNonlinBase) then
     set adir = (${subjdir}/mri/ants)
+    set antsInit = (${adir}/init_template.nii.gz)
     set antsTmp = (${adir}/template0.nii.gz)
     set antsIn = ()
     set antsWrp = ()
     set antsInv = ()
-    set antsAff = ()
     set antsOut = ()
-    set antsTotWrp = ()
-    set antsTotInv = ()
     set crossToBase = ()
     set baseToCross = ()
-    set rawToBase = ()
-    set baseToRaw = ()
     set longToBase = ()
     set baseToLong = ()
-    set i = 0
     foreach s ($BaseSubjsList)
       set antsIn = ($antsIn ${adir}/${s}.nii.gz)
-      set antsWrp = ($antsWrp ${adir}/${s}${i}1Warp.nii.gz)
-      set antsInv = ($antsInv ${adir}/${s}${i}1InverseWarp.nii.gz)
-      set antsAff = ($antsAff ${adir}/${s}${i}0GenericAffine.mat)
+      set antsWrp = ($antsWrp ${adir}/${s}${i}0Warp.nii.gz)
+      set antsInv = ($antsInv ${adir}/${s}${i}0InverseWarp.nii.gz)
       set antsOut = ($antsOut ${adir}/template0${s}${i}WarpedToTemplate.nii.gz)
-      set antsTotWrp = ($antsTotWrp ${adir}/${s}_total_wrp.nii.gz)
-      set antsTotInv = ($antsTotInv ${adir}/${s}_total_inv.nii.gz)
       set crossToBase = ($crossToBase ${tdir}/${s}_cross_to_base.m3z)
       set baseToCross = ($baseToCross ${tdir}/${s}_base_to_cross.m3z)
-      set rawToBase = ($rawToBase ${tdir}/${s}_raw_to_base.m3z)
-      set baseToRaw = ($baseToRaw ${tdir}/${s}_base_to_raw.m3z)
       set longToBase = ($longToBase ${tdir}/${s}_long_to_base.m3z)
       set baseToLong = ($baseToLong ${tdir}/${s}_base_to_long.m3z)
       @ i++
@@ -1437,128 +1424,96 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
     if($RunIt) $cmd |& tee -a $LF
     if($status) goto error_exit;
 
-    # ANTs doesn't know MGZ.
-    foreach i (`seq 1 $#BaseSubjsList`)
-      set cmd = (mri_convert -odt float $rawInVols[$i] $antsIn[$i])
-      echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
-      if($RunIt) $fs_time $cmd |& tee -a $LF
-      if($status) goto error_exit;
-    end
-    # Create initial template.
-    set cmd = (mri_robust_template --mov ${nuInVols})
-    set cmd = ($cmd --average ${robust_template_avg_arg})
-    set cmd = ($cmd --ixforms ${ltaXforms})
+    # Create initial template and TPs (ANTs doesn't know MGZ).
+    set cmd = (mri_robust_template --mov $normInVols)
+    set cmd = ($cmd --average $robust_template_avg_arg)
+    set cmd = ($cmd --ixforms $ltaXforms)
     set cmd = ($cmd --noit)
-    set cmd = ($cmd --template ${subjdir}/mri/nu_template.nii.gz)
-    echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
+    set cmd = ($cmd --template $antsInit)
+    set cmd = ($cmd --mapmovhdr $antsIn)
+    echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
     if($RunIt) $fs_time $cmd |& tee -a $LF
     if($status) goto error_exit;
 
     # Non-linear template space creation.
-    set cmd = (antsMultivariateTemplateConstruction2.sh)
-    set cmd = ($cmd -d 3 -r 0 -n 1 -t SyN)
-    set cmd = ($cmd -o ${adir}/)
-    set cmd = ($cmd -z ${subjdir}/mri/nu_template.nii.gz)
+    set cmd = (antsMultivariateTemplateConstruction2_fs.sh)
+    set cmd = ($cmd -d 3 -l 0 -n 0 -t SyN)
+    set cmd = ($cmd -o $adir/) # Mind the slash.
+    set cmd = ($cmd -z $antsInit)
     if ($OMP_NUM_THREADS > 1) set cmd = ($cmd -c 2 -j $OMP_NUM_THREADS)
     set cmd = ($cmd $antsIn)
     echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
     if($RunIt) $fs_time $cmd |& tee -a $LF
     if($status) goto error_exit;
 
-    # Composite warps.
+    # Composite transforms.
     foreach i (`seq 1 $#BaseSubjsList`)
-      set cmd = (antsApplyTransforms -d 3 -v)
-      set cmd = ("$cmd" -i $antsIn[$i])
-      set cmd = ("$cmd" -r $antsTmp)
-      set cmd = ("$cmd" -t $antsWrp[$i])
-      set cmd = ("$cmd" -t $antsAff[$i]) # Applied first.
-      set cmd = ("$cmd" -o '\['$antsTotWrp[$i],1'\]') # Composite warp.
-      echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
-      if($RunIt) $fs_time eval "$cmd" |& tee -a $LF # Don't interpret [].
-      if($status) goto error_exit;
+      # Convert to M3Z.
       set cmd = (mri_warp_convert --insrcgeom $antsIn[$i])
-      set cmd = ($cmd --initk $antsTotWrp[$i] --outm3z $rawToBase[$i])
+      set cmd = ($cmd --initk $antsWrp[$i] --outm3z $longToBase[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
+      # Cross to non-linear base. 
       set cmd = (mri_concatenate_gcam --downsample)
-      set cmd = ($cmd --change-source $nuInVols[$i])
-      set cmd = ($cmd $rawToBase[$i] $crossToBase[$i])
+      set cmd = ($cmd --change-source $normInVols[$i])
+      set cmd = ($cmd $longToBase[$i] $crossToBase[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
-      set cmd = (mri_concatenate_gcam --downsample)
-      set cmd = ($cmd $lta_inv[$i] $crossToBase[$i] $longToBase[$i])
-      echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
-      if($RunIt) $fs_time $cmd |& tee -a $LF
-      if($status) goto error_exit;
-    end
-
-    # Inverse warps.
-    foreach i (`seq 1 $#BaseSubjsList`)
-      set cmd = (antsApplyTransforms -d 3 -v)
-      set cmd = ("$cmd" -i $antsTmp)
-      set cmd = ("$cmd" -r $antsIn[$i])
-      set cmd = ("$cmd" -t '\['$antsAff[$i],1'\]') # Use inverse.
-      set cmd = ("$cmd" -t $antsInv[$i]) # Applied first.
-      set cmd = ("$cmd" -o '\['$antsTotInv[$i],1'\]')
-      echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
-      if($RunIt) $fs_time eval "$cmd" |& tee -a $LF # Don't interpret [].
-      if($status) goto error_exit;
+      # Convert inverse.
       set cmd = (mri_warp_convert --insrcgeom $antsTmp)
-      set cmd = ($cmd --initk $antsTotInv[$i] --outm3z $baseToRaw[$i])
+      set cmd = ($cmd --initk $antsInv[$i] --outm3z $baseToLong[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
+      # Non-linear base to cross.
       set cmd = (mri_concatenate_gcam --downsample)
-      set cmd = ($cmd --change-target $nuInVols[$i])
-      set cmd = ($cmd $baseToRaw[$i] $baseToCross[$i])
+      set cmd = ($cmd --change-target $normInVols[$i])
+      set cmd = ($cmd $baseToLong[$i] $baseToCross[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
-      set cmd = (mri_concatenate_gcam --downsample)
-      set cmd = ($cmd $baseToCross[$i] $ltaRforms[$i] $baseToLong[$i])
-      echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
-      if($RunIt) $fs_time $cmd |& tee -a $LF
-      if($status) goto error_exit;
-    end
-
-    # Warps from cross to long.
-    foreach i (`seq 1 $#BaseSubjsList`)
+      # Between subjects: cross to long.
       foreach j (`seq 1 $#BaseSubjsList`)
         if ($i == $j) continue
         set out = (${BaseSubjsList[$i]}_cross_to_${BaseSubjsList[$j]}_long.m3z)
         set cmd = (mri_concatenate_gcam --downsample)
-        set cmd = ($cmd $crossToBase[$i] $baseToLong[$j] ${tdir}/${out})
+        set cmd = ($cmd $crossToBase[$i] $baseToLong[$j] $tdir/$out)
         echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
         if($RunIt) $fs_time $cmd |& tee -a $LF
         if($status) goto error_exit;
       end
     end
 
-    # To keep template space stable, ANTs applies the inverse average warp
-    # to the template after each iteration. Undo this by averaging the TPs,
-    # such that the template corresponds to the transforms again.
-    set ltas = ()
+    # To keep template space stable, ANTs applies the inverse average warp to
+    # the template after each iteration. Undo this by averaging the TPs, such
+    # that the template corresponds to the transforms again. Don't convert to
+    # uchar before averaging to avoid blurring.
+    set orig = ${subjdir}/mri/orig.mgz
     foreach i (`seq 1 $#BaseSubjsList`)
-      set cmd = (mri_convert -rt cubic -at $crossToBase[$i])
+      set cmd = (mri_convert -rt cubic -odt float -at $crossToBase[$i])
       set cmd = ($cmd $subjInVols[$i] $antsOut[$i])
       echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
-      set ltas = ($ltas identity.nofile)
     end
     set cmd = (mri_robust_template --mov $antsOut)
     set cmd = ($cmd --average $robust_template_avg_arg)
-    set cmd = ($cmd --ixforms $ltas)
+    set cmd = ($cmd --ixforms `yes identity.nofile | head -n $#BaseSubjsList`)
     set cmd = ($cmd --noit)
-    set cmd = ($cmd --template ${subjdir}/mri/orig.mgz)
+    set cmd = ($cmd --template $orig)
+    echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
+    if($RunIt) $fs_time $cmd |& tee -a $LF
+    if($status) goto error_exit;
+    set cmd = (mri_convert -odt uchar $orig $orig)
     echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
     if($RunIt) $fs_time $cmd |& tee -a $LF
     if($status) goto error_exit;
 
+    set norm_template = ${subjdir}/mri/norm_template.mgz
     foreach i (`seq 1 $#BaseSubjsList`)
-      set cmd = (mri_convert -rt cubic -at $crossToBase[$i])
+      set cmd = (mri_convert -rt cubic -odt float -at $crossToBase[$i])
       set cmd = ($cmd $normInVols[$i] $antsOut[$i])
       echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
@@ -1566,14 +1521,18 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
     end
     set cmd = (mri_robust_template --mov $antsOut)
     set cmd = ($cmd --average $robust_template_avg_arg)
-    set cmd = ($cmd --ixforms $ltas)
+    set cmd = ($cmd --ixforms `yes identity.nofile | head -n $#BaseSubjsList`)
     set cmd = ($cmd --noit)
-    set cmd = ($cmd --template ${subjdir}/mri/norm_template.mgz)
+    set cmd = ($cmd --template $norm_template)
     echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
     if($RunIt) $fs_time $cmd |& tee -a $LF
     if($status) goto error_exit;
-  endif # Not non-linear.
+    set cmd = (mri_convert -odt uchar $norm_template $norm_template)
+    echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
+    if($RunIt) $fs_time $cmd |& tee -a $LF
+    if($status) goto error_exit;
 
+  endif # Non-linear.
   touch $touchdir/base.touch
 endif
 
@@ -9144,9 +9103,8 @@ Other flags:
 
 -base-nonlin
 
-Instead of -base or -base-affine: Use a non-linear coordinate system.
-By default, the base subject is created based on linear registration of all
-time points. This flag also enables -base-affine.
+Instead of -base: use a non-linear coordinate system instead of creating the
+within-subject template based on rigid registration of time points.
 
 -uselongbasectrlvol
 
