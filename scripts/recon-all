@@ -1475,13 +1475,15 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
-      # Between subjects: cross to long.
+    end
+    # Between TPs: cross to long.
+    foreach i (`seq 1 $#BaseSubjsList`)
       foreach j (`seq 1 $#BaseSubjsList`)
         if ($i == $j) continue
         set out = (${BaseSubjsList[$i]}_cross_to_${BaseSubjsList[$j]}_long.m3z)
         set cmd = (mri_concatenate_gcam --downsample)
         set cmd = ($cmd $crossToBase[$i] $baseToLong[$j] $tdir/$out)
-        echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
+        echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
         if($RunIt) $fs_time $cmd |& tee -a $LF
         if($status) goto error_exit;
       end
