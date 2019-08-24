@@ -1438,9 +1438,9 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
     # Non-linear template space creation.
     set cmd = (antsMultivariateTemplateConstruction2_fs.sh)
     set cmd = ($cmd -d 3 -l 0 -n 0 -t SyN)
+    if ($OMP_NUM_THREADS > 1) set cmd = ($cmd -c 2 -j $OMP_NUM_THREADS)
     set cmd = ($cmd -o $adir/) # Mind the slash.
     set cmd = ($cmd -z $antsInit)
-    if ($OMP_NUM_THREADS > 1) set cmd = ($cmd -c 2 -j $OMP_NUM_THREADS)
     set cmd = ($cmd $antsIn)
     echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
     if($RunIt) $fs_time $cmd |& tee -a $LF
