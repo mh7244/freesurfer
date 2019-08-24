@@ -1408,6 +1408,7 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
     set baseToCross = ()
     set longToBase = ()
     set baseToLong = ()
+    set i = 0
     foreach s ($BaseSubjsList)
       set antsIn = ($antsIn ${adir}/${s}.nii.gz)
       set antsWrp = ($antsWrp ${adir}/${s}${i}0Warp.nii.gz)
