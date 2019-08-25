@@ -1455,7 +1455,7 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
-      # Cross to non-linear base. 
+      # Cross to non-linear base.
       set cmd = (mri_concatenate_gcam --downsample)
       set cmd = ($cmd --change-source $normInVols[$i])
       set cmd = ($cmd $longToBase[$i] $crossToBase[$i])
@@ -2646,7 +2646,6 @@ if($DoCAReg) then
   #endif
 
   set cmd = (mri_ca_register)
-  if($UseCuda) set cmd = (mri_ca_register_cuda)
   set cmd = ($cmd $nocerebellum)
   if($LHonly) set cmd = ($cmd -lh)
   if($RHonly) set cmd = ($cmd -rh)
