@@ -1508,7 +1508,7 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
     echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
     if($RunIt) $fs_time $cmd |& tee -a $LF
     if($status) goto error_exit;
-    set cmd = (mri_convert -odt uchar $orig $orig)
+    set cmd = (mri_convert -ns 1 -odt uchar $orig $orig)
     echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
     if($RunIt) $fs_time $cmd |& tee -a $LF
     if($status) goto error_exit;
@@ -1529,7 +1529,7 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
     echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
     if($RunIt) $fs_time $cmd |& tee -a $LF
     if($status) goto error_exit;
-    set cmd = (mri_convert -odt uchar $norm_template $norm_template)
+    set cmd = (mri_convert -ns 1 -odt uchar $norm_template $norm_template)
     echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
     if($RunIt) $fs_time $cmd |& tee -a $LF
     if($status) goto error_exit;
