@@ -1449,16 +1449,15 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
 
     # Composite transforms.
     foreach i (`seq 1 $#BaseSubjsList`)
-      # Convert to M3Z.
-      set cmd = (mri_warp_convert --insrcgeom $antsIn[$i])
+      # Convert to M3Z, changing source geometry to long space.
+      set cmd = (mri_warp_convert --insrcgeom $antsInit)
       set cmd = ($cmd --initk $antsWrp[$i] --outm3z $longToBase[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
       # Cross to non-linear base.
       set cmd = (mri_concatenate_gcam --downsample)
-      set cmd = ($cmd --change-source $normInVols[$i])
-      set cmd = ($cmd $longToBase[$i] $crossToBase[$i])
+      set cmd = ($cmd $ltaRforms[$i] $longToBase[$i] $crossToBase[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
@@ -1470,8 +1469,8 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
       if($status) goto error_exit;
       # Non-linear base to cross.
       set cmd = (mri_concatenate_gcam --downsample)
-      set cmd = ($cmd --change-target $normInVols[$i])
-      set cmd = ($cmd $baseToLong[$i] $baseToCross[$i])
+      #set cmd = ($cmd --change-target $normInVols[$i])
+      set cmd = ($cmd $baseToLong[$i] $lta_inv[$i] $baseToCross[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
