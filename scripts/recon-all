@@ -1450,7 +1450,7 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
     # Composite transforms.
     foreach i (`seq 1 $#BaseSubjsList`)
       # Convert to M3Z, changing source geometry to long space.
-      set cmd = (mri_warp_convert --insrcgeom $antsInit)
+      set cmd = (mri_warp_convert --insrcgeom $antsInit --downsample)
       set cmd = ($cmd --initk $antsWrp[$i] --outm3z $longToBase[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
@@ -1462,7 +1462,7 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
       # Convert inverse.
-      set cmd = (mri_warp_convert --insrcgeom $antsTmp)
+      set cmd = (mri_warp_convert --insrcgeom $antsTmp --downsample)
       set cmd = ($cmd --initk $antsInv[$i] --outm3z $baseToLong[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
