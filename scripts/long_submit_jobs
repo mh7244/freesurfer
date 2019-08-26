@@ -314,6 +314,7 @@ def options_parse():
     h_lflags    = 'Manually specify flags for long (default: \'-all\')'
     
     h_affine    = 'use affine registration for base'
+    h_nonlin    = 'use non-linear registration for base'
     h_force     = 'force reprocessing even if finished successfully before (recon-all.done)'
     h_simulate  = 'do not submit anything, just print commands'
     h_simfiles  = 'do not submit anything, just create command files'
@@ -354,6 +355,7 @@ def options_parse():
     parser.add_option('--lflags' , dest='lflags' , help=h_lflags)
     
     parser.add_option('--affine' , action='store_true', dest='affine', help=h_affine , default=False)
+    parser.add_option('--nonlin' , action='store_true', dest='nonlin', help=h_nonlin , default=False)
     parser.add_option('--force'  , action='store_true', dest='force',  help=h_force , default=False)
     parser.add_option('--simulate', action='store_true', dest='simulate',  help=h_simulate , default=False)
     parser.add_option('--simfiles', action='store_true', dest='simfiles',  help=h_simfiles , default=False)
@@ -363,7 +365,7 @@ def options_parse():
     parser.add_option('--update-recon-all', dest='update_recon_all', action='store_true', help=h_update_recon_all, default=False)
     parser.add_option('--use-recon-all', dest='use_recon_all', help=h_use_recon_all)
 
-    parser.add_option('--pause' ,         dest='pause' , help=h_pause, default=13, type="float")
+    parser.add_option('--pause' ,         dest='pause' , help=h_pause, default=10, type="float")
     parser.add_option('--max'   ,         dest='max'   , help=h_max, default=100, type="int")
     parser.add_option('--queue' ,         dest='queue' , help=h_queue)
     parser.add_option('--cmem'  ,         dest='cmem'   , help=h_cmem, default=7, type="int")
@@ -752,7 +754,9 @@ def run_base(qdectable,options):
             continue
 
         baseflag = " -base "
-        if options.affine:
+        if options.nonlin:
+            baseflag = " -base-nonlin "
+        elif options.affine:
             baseflag = " -base-affine "
             
         cmd = recall+" -sd "+options.bdir+baseflag+subjectid+tps+" "+options.bflags
