@@ -2186,7 +2186,6 @@ skullstrip:
   endif
 
   # base subject stream:
-  #if($DoCreateBaseSubj && ! $DoNonlinBase) then
   if($DoCreateBaseSubj) then
     # create lists with all cross brainmasks and all ltas:
     set bmInVols=""
