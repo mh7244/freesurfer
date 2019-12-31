@@ -247,6 +247,7 @@ set DoNuIntensityCor3T = 0; # if 1, use Zheng, Chee, Zagorodnov params for 3T
 set DoAddTp = 0; # if 1, then 'fake'-add this timepoint to long subj set
 set DoAffineBase = 0; # if 1, allow affine when creating base (fix calibration)
 set DoNonlinBase = 0; # if 1, use non-linear warps when creating base
+set VoxelMorphModel = (); # if set, create non-linear base using VoxelMorph
 set UseCubic = 0; # if 1, use cubic spline when mri_convert does conform step
 set UseFixMtl = 0; # if 1, add -fix_mtl flag to make_surfaces
 
@@ -1437,39 +1438,57 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
     if($status) goto error_exit;
 
     # Non-linear template space creation.
-    set cmd = (antsMultivariateTemplateConstruction2_fs.sh)
-    set cmd = ($cmd -d 3 -l 0 -n 0 -t SyN)
-    if ($OMP_NUM_THREADS > 1) set cmd = ($cmd -c 2 -j $OMP_NUM_THREADS)
-    set cmd = ($cmd -o $adir/) # Mind the slash.
-    set cmd = ($cmd -z $antsInit)
-    set cmd = ($cmd $antsIn)
+    if ($VoxelMorphModel == "") then
+        set cmd = (antsMultivariateTemplateConstruction2_fs.sh)
+        set cmd = ($cmd -d 3 -l 0 -n 0 -t SyN)
+        if ($OMP_NUM_THREADS > 1) set cmd = ($cmd -c 2 -j $OMP_NUM_THREADS)
+        set cmd = ($cmd -o $adir/) # Mind the slash.
+        set cmd = ($cmd -z $antsInit)
+        set cmd = ($cmd $antsIn)
+    else
+        set cmd = (mri_vm_template.py --mov $antsIn)
+        set cmd = ($cmd --model_file $VoxelMorphModel)
+        set cmd = ($cmd --out_wrp $longToBase --out_inv $baseToLong)
+    endif
     echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
     if($RunIt) $fs_time $cmd |& tee -a $LF
     if($status) goto error_exit;
 
     # Composite transforms.
     foreach i (`seq 1 $#BaseSubjsList`)
-      # Convert to M3Z, changing source geometry to long space.
-      set cmd = (mri_warp_convert --insrcgeom $antsInit --downsample)
-      set cmd = ($cmd --initk $antsWrp[$i] --outm3z $longToBase[$i])
-      echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
-      if($RunIt) $fs_time $cmd |& tee -a $LF
-      if($status) goto error_exit;
-      # Cross to non-linear base.
+      if ($VoxelMorphModel == "") then
+        # Convert to M3Z.
+        set cmd = (mri_warp_convert --insrcgeom $antsInit --downsample)
+        set cmd = ($cmd --initk $antsWrp[$i] --outm3z $longToBase[$i])
+        echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
+        if($RunIt) $fs_time $cmd |& tee -a $LF
+        if($status) goto error_exit;
+        # Convert inverse.
+        set cmd = (mri_warp_convert --insrcgeom $antsTmp --downsample)
+        set cmd = ($cmd --initk $antsInv[$i] --outm3z $baseToLong[$i])
+        echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
+        if($RunIt) $fs_time $cmd |& tee -a $LF
+        if($status) goto error_exit;
+      else
+        # Halve resolution.
+        set cmd = (mri_concatenate_gcam -d $longToBase[$i] $longToBase[$i])
+        echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
+        if($RunIt) $fs_time $cmd |& tee -a $LF
+        if($status) goto error_exit;
+        # Downsample inverse.
+        set cmd = (mri_concatenate_gcam -d $baseToLong[$i] $baseToLong[$i])
+        echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
+        if($RunIt) $fs_time $cmd |& tee -a $LF
+        if($status) goto error_exit;
+      endif
+      # Cross to base.
       set cmd = (mri_concatenate_gcam --downsample)
       set cmd = ($cmd $ltaRforms[$i] $longToBase[$i] $crossToBase[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
       if($status) goto error_exit;
-      # Convert inverse.
-      set cmd = (mri_warp_convert --insrcgeom $antsTmp --downsample)
-      set cmd = ($cmd --initk $antsInv[$i] --outm3z $baseToLong[$i])
-      echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
-      if($RunIt) $fs_time $cmd |& tee -a $LF
-      if($status) goto error_exit;
-      # Non-linear base to cross.
+      # Base to cross.
       set cmd = (mri_concatenate_gcam --downsample)
-      #set cmd = ($cmd --change-target $normInVols[$i])
       set cmd = ($cmd $baseToLong[$i] $lta_inv[$i] $baseToCross[$i])
       echo "\n $cmd \n" |& tee -a $LF |& tee -a $CF
       if($RunIt) $fs_time $cmd |& tee -a $LF
@@ -5772,6 +5791,11 @@ while( $#argv != 0 )
     case "-addtp":
       # 'fake'-add a new timepoint
       set DoAddTp = 1;
+      breaksw
+
+    case "-vm-model":
+      if ( $#argv < 1) goto arg1err;
+      set VoxelMorphModel = $argv[1]; shift;
       breaksw
 
     case "-base-nonlin":
