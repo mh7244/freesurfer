@@ -1432,7 +1432,11 @@ if ($DoCreateBaseInput && $DoCreateBaseSubj) then
     set cmd = ($cmd --ixforms $ltaXforms)
     set cmd = ($cmd --noit)
     set cmd = ($cmd --template $antsInit)
-    set cmd = ($cmd --mapmovhdr $antsIn)
+    if ($VoxelMorphModel == "") then
+      set cmd = ($cmd --mapmovhdr $antsIn)
+    else
+      set cmd = ($cmd --mapmov $antsIn)
+    endif
     echo "\n $cmd \n"|& tee -a $LF |& tee -a $CF
     if($RunIt) $fs_time $cmd |& tee -a $LF
     if($status) goto error_exit;
